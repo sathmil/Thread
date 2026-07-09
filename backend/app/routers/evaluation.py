@@ -1,12 +1,15 @@
+import uuid
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.deps import get_db
-from app.models import EvaluationQuery, EvaluationQueryExpectedStory, EvaluationResult, Story
+from app.models import EvaluationQuery, EvaluationQueryExpectedStory, EvaluationResult, Story, User
 from app.schemas import EvaluationResultOut, EvaluationRunOut
 from app.services import evaluation_service
-from app.services.dataset_service import get_default_dataset
+from app.services.dataset_service import resolve_dataset
 
 router = APIRouter()
 
@@ -16,9 +19,11 @@ def evaluate(
     unit: str = Query("Passages"),
     top_k: int = Query(3),
     embedding_model: str = Query("Local MiniLM"),
+    dataset_id: uuid.UUID | None = Query(default=None),
+    user: User | None = Depends(get_current_user),
     session: Session = Depends(get_db),
 ) -> EvaluationRunOut:
-    dataset = get_default_dataset(session)
+    dataset = resolve_dataset(session, dataset_id, user)
     run = evaluation_service.run_evaluation(session, dataset, unit, top_k, embedding_model)
 
     results = (

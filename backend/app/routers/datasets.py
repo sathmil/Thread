@@ -1,13 +1,19 @@
+import io
+import time
 import uuid
 
-from fastapi import APIRouter, Depends
+import pandas as pd
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user, require_user
+from app.data import enrich_stories
 from app.deps import get_db
-from app.models import Dataset, User
-from app.schemas import DatasetCreateRequest, DatasetOut
-from app.services import dataset_service
+from app.models import Dataset, Job, Story, User
+from app.routers.jobs import job_to_out
+from app.schemas import DatasetCreateRequest, DatasetOut, IndexRequest, JobOut, UploadResult
+from app.services import dataset_service, indexing_service
+from app.tasks import index_dataset_task
 
 router = APIRouter()
 
@@ -21,6 +27,11 @@ def _to_out(dataset: Dataset) -> DatasetOut:
         status=dataset.status,
         owner_user_id=str(dataset.owner_user_id) if dataset.owner_user_id else None,
     )
+
+
+def _require_owner(dataset: Dataset, user: User) -> None:
+    if dataset.owner_user_id != user.id:
+        raise HTTPException(status_code=403, detail="Only the dataset owner can do that.")
 
 
 @router.get("/datasets", response_model=list[DatasetOut])
@@ -50,3 +61,106 @@ def get_dataset(
 ) -> DatasetOut:
     dataset = dataset_service.get_dataset_scoped(session, dataset_id, user)
     return _to_out(dataset)
+
+
+@router.post("/datasets/{dataset_id}/upload", response_model=UploadResult)
+async def upload_stories(
+    dataset_id: uuid.UUID,
+    file: UploadFile,
+    user: User = Depends(require_user),
+    session: Session = Depends(get_db),
+) -> UploadResult:
+    dataset = dataset_service.get_dataset_scoped(session, dataset_id, user)
+    _require_owner(dataset, user)
+
+    raw = await file.read()
+    try:
+        df = pd.read_csv(io.BytesIO(raw))
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Could not parse CSV: {exc}") from exc
+
+    if "story_text" not in df.columns:
+        raise HTTPException(status_code=422, detail="CSV must have a 'story_text' column.")
+
+    existing_count = session.query(Story).filter(Story.dataset_id == dataset.id).count()
+    if "id" not in df.columns:
+        df["id"] = [str(existing_count + i + 1) for i in range(len(df))]
+    df["id"] = df["id"].astype(str).str.zfill(3)
+    df["story_text"] = df["story_text"].fillna("")
+
+    enriched = enrich_stories(df)
+    enriched["source"] = dataset.name
+
+    created = 0
+    for _, row in enriched.iterrows():
+        session.add(
+            Story(
+                dataset_id=dataset.id,
+                external_id=row["id"],
+                title=row["title"],
+                focus=row["focus"],
+                story_text=row["story_text"],
+                word_count=int(row["word_count"]),
+                source=row["source"],
+            )
+        )
+        created += 1
+    session.commit()
+
+    return UploadResult(stories_created=created)
+
+
+@router.post("/datasets/{dataset_id}/index", response_model=JobOut, status_code=202)
+def index_dataset(
+    dataset_id: uuid.UUID,
+    payload: IndexRequest,
+    user: User = Depends(require_user),
+    session: Session = Depends(get_db),
+) -> JobOut:
+    dataset = dataset_service.get_dataset_scoped(session, dataset_id, user)
+    _require_owner(dataset, user)
+
+    story_count = session.query(Story).filter(Story.dataset_id == dataset.id).count()
+
+    job = Job(dataset_id=dataset.id, job_type="index", status="queued", story_count=story_count)
+    session.add(job)
+    session.commit()
+    session.refresh(job)
+
+    if story_count < indexing_service.SYNC_INDEX_THRESHOLD:
+        # Small upload: embed inline for a snappier UX (roadmap M6 decision).
+        start = time.perf_counter()
+        job.status = "running"
+        dataset.status = "indexing"
+        session.commit()
+        try:
+            def _on_progress(pct: int) -> None:
+                job.progress_pct = pct
+                session.commit()
+
+            result = indexing_service.index_dataset(
+                session, dataset, payload.embedding_model, on_progress=_on_progress
+            )
+            indexing_service.cluster_dataset(session, dataset, payload.embedding_model)
+            job.status = "succeeded"
+            job.progress_pct = 100
+            job.story_count = result.story_count
+            job.embedding_ms = result.embedding_ms
+            job.avg_embedding_ms_per_story = (
+                result.embedding_ms / result.story_count if result.story_count else None
+            )
+            job.duration_ms = (time.perf_counter() - start) * 1000
+            dataset.status = "ready"
+            session.commit()
+        except Exception as exc:
+            session.rollback()
+            job.status = "failed"
+            job.error_message = str(exc)
+            session.commit()
+    else:
+        task = index_dataset_task.delay(str(job.id), str(dataset.id), payload.embedding_model)
+        job.celery_task_id = task.id
+        session.commit()
+
+    session.refresh(job)
+    return job_to_out(job)

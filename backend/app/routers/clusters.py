@@ -1,17 +1,25 @@
-from fastapi import APIRouter, Depends
+import uuid
+
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.deps import get_db
+from app.models import User
 from app.schemas import ClusterOut, ClusterStoryOut, ProjectionPointOut
 from app.services import cluster_service
-from app.services.dataset_service import get_default_dataset
+from app.services.dataset_service import resolve_dataset
 
 router = APIRouter()
 
 
 @router.get("/clusters", response_model=list[ClusterOut])
-def list_clusters(session: Session = Depends(get_db)) -> list[ClusterOut]:
-    dataset = get_default_dataset(session)
+def list_clusters(
+    dataset_id: uuid.UUID | None = Query(default=None),
+    user: User | None = Depends(get_current_user),
+    session: Session = Depends(get_db),
+) -> list[ClusterOut]:
+    dataset = resolve_dataset(session, dataset_id, user)
     clusters = cluster_service.get_clusters(session, dataset)
     return [
         ClusterOut(
@@ -35,8 +43,12 @@ def list_clusters(session: Session = Depends(get_db)) -> list[ClusterOut]:
 
 
 @router.get("/clusters/projection", response_model=list[ProjectionPointOut])
-def get_projection(session: Session = Depends(get_db)) -> list[ProjectionPointOut]:
-    dataset = get_default_dataset(session)
+def get_projection(
+    dataset_id: uuid.UUID | None = Query(default=None),
+    user: User | None = Depends(get_current_user),
+    session: Session = Depends(get_db),
+) -> list[ProjectionPointOut]:
+    dataset = resolve_dataset(session, dataset_id, user)
     points = cluster_service.get_projection(session, dataset)
     return [
         ProjectionPointOut(

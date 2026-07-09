@@ -242,6 +242,10 @@ class Job(Base):
     celery_task_id: Mapped[str | None] = mapped_column(String)
     error_message: Mapped[str | None] = mapped_column(Text)
     progress_pct: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    story_count: Mapped[int | None] = mapped_column(Integer)
+    duration_ms: Mapped[float | None] = mapped_column(Float)
+    embedding_ms: Mapped[float | None] = mapped_column(Float)
+    avg_embedding_ms_per_story: Mapped[float | None] = mapped_column(Float)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

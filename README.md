@@ -40,7 +40,43 @@ This project is mid-migration from a Streamlit prototype to a production stack (
 - `docs/portfolio_summary.md`: portfolio/interview framing
 - `docker-compose.yml`: local Postgres+pgvector service (backend API/frontend containers land in later milestones)
 
-## Run It
+## Running the Full Stack (Next.js + FastAPI + Postgres/pgvector + Celery)
+
+The project is now a FastAPI backend + Next.js frontend behind Postgres/pgvector, with Celery+Redis for background
+indexing jobs (uploaded datasets embed asynchronously above ~25 stories). The Streamlit app below still exists as
+the original prototype but is no longer the primary way to run this.
+
+```bash
+# 1. Infra
+docker compose up -d db redis
+
+# 2. Backend API (new terminal)
+cd backend && source ../myenv/bin/activate
+alembic upgrade head          # first time / after schema changes
+python -m scripts.seed        # first time, seeds the public 10-story dataset
+uvicorn app.main:app --port 8000
+
+# 3. Celery worker, for background dataset indexing (new terminal)
+cd backend && source ../myenv/bin/activate
+celery -A app.celery_app worker --loglevel=info --pool=solo
+```
+
+> **macOS note:** use `--pool=solo` (not the default prefork pool) for the Celery worker. Prefork forks a child
+> process per worker, and PyTorch/Metal (used internally by `sentence-transformers`) isn't fork-safe on macOS —
+> the child crashes with `+[MPSGraphObject initialize] ... Crashing instead` the first time it embeds anything.
+> `--pool=solo` avoids the fork entirely. This only matters for local dev; a containerized worker in a real
+> deployment wouldn't hit this.
+
+```bash
+# 4. Frontend (new terminal)
+cd frontend && npm run dev
+```
+
+Then open `http://localhost:3000`. To exercise the upload → index → search flow at scale without a real Clerk
+account yet, see `backend/scripts/demo_large_upload.py` (drives the API directly via `TestClient`, bypassing auth
+with a dependency override — the same pattern the test suite uses).
+
+## Running the Streamlit Prototype
 
 ```bash
 source myenv/bin/activate

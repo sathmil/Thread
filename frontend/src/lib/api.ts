@@ -81,6 +81,23 @@ export type DatasetOut = {
   owner_user_id: string | null;
 };
 
+export type UploadResult = {
+  stories_created: number;
+};
+
+export type JobOut = {
+  id: string;
+  dataset_id: string;
+  job_type: string;
+  status: "queued" | "running" | "succeeded" | "failed";
+  progress_pct: number;
+  story_count: number | null;
+  duration_ms: number | null;
+  embedding_ms: number | null;
+  avg_embedding_ms_per_story: number | null;
+  error_message: string | null;
+};
+
 async function fetchJson<T>(path: string, init?: RequestInit & { token?: string | null }): Promise<T> {
   const { token, headers, ...rest } = init ?? {};
   const response = await fetch(`${API_URL}${path}`, {
@@ -135,4 +152,40 @@ export function createDataset(
     body: JSON.stringify(payload),
     token,
   });
+}
+
+export async function uploadStories(
+  datasetId: string,
+  file: File,
+  token: string
+): Promise<UploadResult> {
+  const form = new FormData();
+  form.append("file", file);
+
+  const response = await fetch(`${API_URL}/datasets/${datasetId}/upload`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Upload failed (${response.status}): ${detail}`);
+  }
+  return response.json() as Promise<UploadResult>;
+}
+
+export function indexDataset(
+  datasetId: string,
+  token: string,
+  embeddingModel: string = "Local MiniLM"
+): Promise<JobOut> {
+  return fetchJson<JobOut>(`/datasets/${datasetId}/index`, {
+    method: "POST",
+    body: JSON.stringify({ embedding_model: embeddingModel }),
+    token,
+  });
+}
+
+export function getJob(jobId: string, token?: string | null): Promise<JobOut> {
+  return fetchJson<JobOut>(`/jobs/${jobId}`, { token });
 }

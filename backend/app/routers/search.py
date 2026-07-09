@@ -1,20 +1,27 @@
 import time
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.deps import get_db
-from app.models import SearchLog
+from app.models import SearchLog, User
 from app.schemas import SearchRequest, SearchResponse, SearchResultOut
 from app.services import search_service
-from app.services.dataset_service import get_default_dataset
+from app.services.dataset_service import resolve_dataset
 
 router = APIRouter()
 
 
 @router.post("/search", response_model=SearchResponse)
-def search(payload: SearchRequest, session: Session = Depends(get_db)) -> SearchResponse:
-    dataset = get_default_dataset(session)
+def search(
+    payload: SearchRequest,
+    user: User | None = Depends(get_current_user),
+    session: Session = Depends(get_db),
+) -> SearchResponse:
+    dataset_id = uuid.UUID(payload.dataset_id) if payload.dataset_id else None
+    dataset = resolve_dataset(session, dataset_id, user)
 
     start = time.perf_counter()
     try:
@@ -28,6 +35,7 @@ def search(payload: SearchRequest, session: Session = Depends(get_db)) -> Search
     session.add(
         SearchLog(
             dataset_id=dataset.id,
+            user_id=user.id if user else None,
             query_text=payload.query,
             unit_type=payload.unit,
             embedding_model=payload.embedding_model,

@@ -2,14 +2,23 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { createDataset, getDatasets } from "@/lib/api";
+import {
+  createDataset,
+  getDatasets,
+  getJob,
+  indexDataset,
+  uploadStories,
+  type DatasetOut,
+} from "@/lib/api";
+
+type GetToken = () => Promise<string | null>;
 
 export default function WorkspacePage() {
   const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
@@ -58,7 +67,8 @@ function WorkspaceContent() {
       <div>
         <h1 className="text-2xl font-semibold">Workspace</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Public datasets are visible to everyone; private datasets are visible only to you.
+          Public datasets are visible to everyone; private datasets are visible only to you. Upload a CSV with a
+          story_text column, then index it to make it searchable and clustered.
         </p>
       </div>
 
@@ -100,20 +110,112 @@ function WorkspaceContent() {
 
       <div className="space-y-2">
         {datasetsQuery.data?.map((dataset) => (
-          <Card key={dataset.id}>
-            <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-base">{dataset.name}</CardTitle>
-              <Badge variant={dataset.visibility === "public" ? "default" : "secondary"}>
-                {dataset.visibility}
-              </Badge>
-            </CardHeader>
-            <CardContent>
-              {dataset.description && <p className="text-sm text-muted-foreground">{dataset.description}</p>}
-              <p className="mt-1 text-xs text-muted-foreground">Status: {dataset.status}</p>
-            </CardContent>
-          </Card>
+          <DatasetCard key={dataset.id} dataset={dataset} getToken={getToken} />
         ))}
       </div>
     </div>
+  );
+}
+
+function DatasetCard({ dataset, getToken }: { dataset: DatasetOut; getToken: GetToken }) {
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+
+  // GET /datasets only ever returns public datasets plus the caller's own
+  // private ones (see dataset_service.list_datasets_for_user), so any
+  // private dataset showing up here is one this user owns and can manage.
+  const isMine = dataset.visibility === "private";
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const token = await getToken();
+      if (!token) throw new Error("Sign in required.");
+      return uploadStories(dataset.id, file, token);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["datasets"] }),
+  });
+
+  const indexMutation = useMutation({
+    mutationFn: async () => {
+      const token = await getToken();
+      if (!token) throw new Error("Sign in required.");
+      return indexDataset(dataset.id, token);
+    },
+    onSuccess: (job) => setActiveJobId(job.id),
+  });
+
+  const jobQuery = useQuery({
+    queryKey: ["job", activeJobId],
+    queryFn: async () => getJob(activeJobId as string, await getToken()),
+    enabled: activeJobId !== null,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "queued" || status === "running" ? 1500 : false;
+    },
+  });
+
+  const job = jobQuery.data;
+  const isIndexing = job ? job.status === "queued" || job.status === "running" : false;
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardTitle className="text-base">{dataset.name}</CardTitle>
+        <div className="flex items-center gap-2">
+          <Badge variant={dataset.visibility === "public" ? "default" : "secondary"}>{dataset.visibility}</Badge>
+          <Badge variant="outline">{job?.status ?? dataset.status}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {dataset.description && <p className="text-sm text-muted-foreground">{dataset.description}</p>}
+
+        {isMine && (
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              className="text-sm text-muted-foreground file:mr-2 file:rounded-md file:border file:bg-transparent file:px-2 file:py-1 file:text-sm"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) uploadMutation.mutate(file);
+              }}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => indexMutation.mutate()}
+              disabled={indexMutation.isPending || isIndexing}
+            >
+              {isIndexing ? `Indexing... ${job?.progress_pct ?? 0}%` : "Index"}
+            </Button>
+          </div>
+        )}
+
+        {uploadMutation.data && (
+          <p className="text-xs text-muted-foreground">Uploaded {uploadMutation.data.stories_created} stories.</p>
+        )}
+        {uploadMutation.error && (
+          <p className="text-xs text-destructive">{(uploadMutation.error as Error).message}</p>
+        )}
+        {indexMutation.error && (
+          <p className="text-xs text-destructive">{(indexMutation.error as Error).message}</p>
+        )}
+
+        {job && job.status === "succeeded" && (
+          <p className="text-xs text-muted-foreground">
+            Indexed {job.story_count} stories in {job.duration_ms?.toFixed(0)}ms
+            {job.avg_embedding_ms_per_story
+              ? ` (${job.avg_embedding_ms_per_story.toFixed(1)}ms/story embedding)`
+              : ""}
+            .
+          </p>
+        )}
+        {job && job.status === "failed" && (
+          <p className="text-xs text-destructive">Indexing failed: {job.error_message}</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }

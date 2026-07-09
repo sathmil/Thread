@@ -33,6 +33,7 @@ class SearchRequest(BaseModel):
     unit: str = "Passages"
     top_k: int = 5
     embedding_model: str = "Local MiniLM"
+    dataset_id: str | None = None
 
 
 class SearchResultOut(BaseModel):
@@ -95,3 +96,24 @@ class EvaluationRunOut(BaseModel):
     mrr: float
     avg_latency_ms: float | None
     results: list[EvaluationResultOut]
+
+
+class UploadResult(BaseModel):
+    stories_created: int
+
+
+class IndexRequest(BaseModel):
+    embedding_model: str = "Local MiniLM"
+
+
+class JobOut(BaseModel):
+    id: str
+    dataset_id: str
+    job_type: str
+    status: str
+    progress_pct: int
+    story_count: int | None
+    duration_ms: float | None
+    embedding_ms: float | None
+    avg_embedding_ms_per_story: float | None
+    error_message: str | None

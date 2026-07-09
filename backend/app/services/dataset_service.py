@@ -55,3 +55,14 @@ def get_dataset_scoped(session: Session, dataset_id: uuid.UUID, user: User | Non
     if dataset.owner_user_id != user.id:
         raise HTTPException(status_code=403, detail="You don't have access to this dataset.")
     return dataset
+
+
+def resolve_dataset(session: Session, dataset_id: uuid.UUID | None, user: User | None) -> Dataset:
+    """Used by /stories, /search, /clusters, /evaluation/run: falls back to the
+    single shared public dataset when no dataset_id is given (unchanged
+    behavior for the original frontend pages), otherwise applies the same
+    401/403/public-read scoping as get_dataset_scoped.
+    """
+    if dataset_id is None:
+        return get_default_dataset(session)
+    return get_dataset_scoped(session, dataset_id, user)
