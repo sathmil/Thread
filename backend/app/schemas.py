@@ -6,6 +6,20 @@ class HealthResponse(BaseModel):
     db_ok: bool
 
 
+class DatasetCreateRequest(BaseModel):
+    name: str
+    description: str | None = None
+
+
+class DatasetOut(BaseModel):
+    id: str
+    name: str
+    description: str | None
+    visibility: str
+    status: str
+    owner_user_id: str | None
+
+
 class StoryOut(BaseModel):
     external_id: str
     title: str | None

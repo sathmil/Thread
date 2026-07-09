@@ -1,5 +1,6 @@
 "use client";
 
+import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,7 +12,10 @@ const LINKS = [
   { href: "/evaluation", label: "Evaluation" },
   { href: "/map", label: "Map" },
   { href: "/dataset", label: "Dataset" },
+  { href: "/workspace", label: "Workspace" },
 ];
+
+const CLERK_ENABLED = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
 export function Nav() {
   const pathname = usePathname();
@@ -34,7 +38,24 @@ export function Nav() {
             </Link>
           ))}
         </nav>
+        <div className="ml-auto">{CLERK_ENABLED ? <AuthControls /> : <AuthNotConfigured />}</div>
       </div>
     </header>
+  );
+}
+
+function AuthControls() {
+  const { isSignedIn } = useUser();
+  return isSignedIn ? <UserButton /> : <SignInButton mode="modal" />;
+}
+
+function AuthNotConfigured() {
+  return (
+    <span
+      className="text-xs text-muted-foreground"
+      title="Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY to enable sign-in"
+    >
+      Sign in (not configured)
+    </span>
   );
 }

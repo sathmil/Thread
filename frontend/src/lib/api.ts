@@ -72,10 +72,24 @@ export type ProjectionPointOut = {
   theme_name: string | null;
 };
 
-async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+export type DatasetOut = {
+  id: string;
+  name: string;
+  description: string | null;
+  visibility: string;
+  status: string;
+  owner_user_id: string | null;
+};
+
+async function fetchJson<T>(path: string, init?: RequestInit & { token?: string | null }): Promise<T> {
+  const { token, headers, ...rest } = init ?? {};
   const response = await fetch(`${API_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
+    },
+    ...rest,
   });
   if (!response.ok) {
     const detail = await response.text();
@@ -106,4 +120,19 @@ export function getEvaluationRun(params: { unit: SearchUnit; top_k: number }): P
 
 export function getProjection(): Promise<ProjectionPointOut[]> {
   return fetchJson<ProjectionPointOut[]>("/clusters/projection");
+}
+
+export function getDatasets(token?: string | null): Promise<DatasetOut[]> {
+  return fetchJson<DatasetOut[]>("/datasets", { token });
+}
+
+export function createDataset(
+  payload: { name: string; description?: string },
+  token: string
+): Promise<DatasetOut> {
+  return fetchJson<DatasetOut>("/datasets", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    token,
+  });
 }
