@@ -222,6 +222,7 @@ class SearchLog(Base):
     embedding_model: Mapped[str | None] = mapped_column(String)
     top_k: Mapped[int | None] = mapped_column(Integer)
     latency_ms: Mapped[float | None] = mapped_column(Float)
+    embedding_ms: Mapped[float | None] = mapped_column(Float)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
