@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -45,7 +46,9 @@ export default function DatasetPage() {
               <TableRow key={story.external_id}>
                 <TableCell>{story.external_id}</TableCell>
                 <TableCell className="truncate" title={story.title ?? undefined}>
-                  {story.title}
+                  <Link href={`/stories/${story.id}`} className="hover:underline">
+                    {story.title}
+                  </Link>
                 </TableCell>
                 <TableCell className="truncate">{story.focus}</TableCell>
                 <TableCell>{story.word_count}</TableCell>

@@ -3,6 +3,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 export type SearchUnit = "Sentences" | "Passages" | "Stories";
 
 export type StoryOut = {
+  id: string;
   external_id: string;
   title: string | null;
   focus: string | null;
@@ -10,8 +11,39 @@ export type StoryOut = {
   preview: string;
 };
 
+export type StoryDetailOut = {
+  external_id: string;
+  title: string | null;
+  focus: string | null;
+  story_text: string;
+  word_count: number | null;
+  theme_name: string | null;
+};
+
+export type FingerprintOut = {
+  dimensions: Record<string, number>;
+  source: string;
+  model: string;
+};
+
+export type JourneyEntryOut = {
+  story_id: string;
+  title: string | null;
+  preview: string;
+  score: number;
+  same_theme: boolean;
+  explanation: string;
+};
+
+export type JourneyOut = {
+  nearest: JourneyEntryOut[];
+  contrasting: JourneyEntryOut | null;
+  reflection_questions: string[];
+};
+
 export type SearchResultOut = {
   story_id: string;
+  story_uuid: string;
   unit_type: string;
   unit_index: number;
   text_unit: string;
@@ -28,6 +60,7 @@ export type SearchResponse = {
 
 export type ClusterStoryOut = {
   external_id: string;
+  story_uuid: string;
   title: string | null;
   focus: string | null;
   word_count: number | null;
@@ -118,6 +151,18 @@ async function fetchJson<T>(path: string, init?: RequestInit & { token?: string 
 
 export function getStories(): Promise<StoryOut[]> {
   return fetchJson<StoryOut[]>("/stories");
+}
+
+export function getStoryDetail(storyId: string, token?: string | null): Promise<StoryDetailOut> {
+  return fetchJson<StoryDetailOut>(`/stories/${storyId}`, { token });
+}
+
+export function getFingerprint(storyId: string, token?: string | null): Promise<FingerprintOut> {
+  return fetchJson<FingerprintOut>(`/stories/${storyId}/fingerprint`, { token });
+}
+
+export function getJourney(storyId: string, token?: string | null): Promise<JourneyOut> {
+  return fetchJson<JourneyOut>(`/stories/${storyId}/journey`, { token });
 }
 
 export function getClusters(): Promise<ClusterOut[]> {

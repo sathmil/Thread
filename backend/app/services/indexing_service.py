@@ -8,9 +8,10 @@ import pandas as pd
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.clustering import cluster_stories, summarize_cluster
+from app.clustering import cluster_stories
 from app.embeddings import embed_texts
 from app.models import Cluster, ClusterAssignment, Dataset, Embedding, Story, TextUnit
+from app.services import fingerprint_service, theme_report_service
 from app.services.embedding_columns import model_id_for_provider, resolve_provider, vector_column, vector_kwargs
 from app.text import make_preview, split_text_units
 
@@ -192,16 +193,24 @@ def cluster_dataset(session: Session, dataset: Dataset, embedding_model: str = "
     cluster_by_label: dict[int, Cluster] = {}
     for label in sorted(set(labels)):
         mask = labels == label
-        previews = [make_preview(text) for text, is_member in zip(texts, mask) if is_member]
+        member_stories = [s for s, is_member in zip(stories, mask) if is_member]
+        previews = [make_preview(s.story_text) for s in member_stories]
         cluster_df = pd.DataFrame({"preview": previews})
+        theme_name = cluster_names[int(label)]
+
+        fingerprints = [
+            fingerprint_service.compute_fingerprint(session, s).dimensions for s in member_stories
+        ]
+        summary, summary_source = theme_report_service.generate_report(cluster_df, theme_name, fingerprints)
+
         cluster = Cluster(
             dataset_id=dataset.id,
             embedding_model=model_id,
             cluster_run_id=cluster_run_id,
             cluster_label=int(label),
-            theme_name=cluster_names[int(label)],
-            summary=summarize_cluster(cluster_df, cluster_names[int(label)]),
-            summary_source="rule_based",
+            theme_name=theme_name,
+            summary=summary,
+            summary_source=summary_source,
         )
         session.add(cluster)
         cluster_by_label[int(label)] = cluster

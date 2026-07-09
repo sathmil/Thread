@@ -22,3 +22,30 @@ FOCUS_SIGNALS = {
 
 SEARCH_UNITS = ("Sentences", "Passages", "Stories")
 EMBEDDING_BACKENDS = ("Local MiniLM", "OpenAI API")
+
+# Fixed narrative-fingerprint dimensions (roadmap M7.5) — deliberately small
+# and stable so radar charts/comparisons stay meaningful. Keyword lists below
+# are the deterministic fallback scorer used when no LLM key is configured;
+# this is a sibling of FOCUS_SIGNALS above (independent per-dimension scores
+# rather than a single best-match tag).
+FINGERPRINT_DIMENSIONS = (
+    "hope",
+    "isolation",
+    "identity",
+    "family",
+    "growth",
+    "grief",
+    "belonging",
+    "agency",
+)
+
+FINGERPRINT_KEYWORDS = {
+    "hope": ["hope", "hopeful", "future", "better days", "optimis", "dream", "possibility"],
+    "isolation": ["alone", "isolat", "lonely", "invisible", "left out", "excluded", "disappear"],
+    "identity": ["identity", "who i am", "culture", "language", "heritage", "name", "native"],
+    "family": ["family", "mother", "father", "grandmother", "grandfather", "parents", "sister", "brother"],
+    "growth": ["learned", "grew", "grow", "practice", "challenge", "overcome", "stronger", "growth"],
+    "grief": ["loss", "grief", "mourning", "missing", "gone", "died", "passed away"],
+    "belonging": ["belong", "community", "welcome", "home", "fit in", "together"],
+    "agency": ["decided", "chose", "voice", "spoke up", "stood up", "took charge", "led", "raise my hand"],
+}

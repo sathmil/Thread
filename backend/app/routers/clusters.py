@@ -31,6 +31,7 @@ def list_clusters(
             stories=[
                 ClusterStoryOut(
                     external_id=s.external_id,
+                    story_uuid=s.story_uuid,
                     title=s.title,
                     focus=s.focus,
                     word_count=s.word_count,

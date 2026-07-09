@@ -251,3 +251,27 @@ class Job(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class StoryFingerprint(Base):
+    """Per-story scores across a fixed set of human-relatable dimensions —
+    the foundational object that Journey/Theme/Insight features read from
+    (see roadmap M7.5). Versioned the same way as Embedding, so re-scoring
+    under a different model doesn't require deleting prior results.
+    """
+
+    __tablename__ = "story_fingerprints"
+    __table_args__ = (
+        UniqueConstraint("story_id", "model", "version", name="uq_story_fingerprints_story_model_version"),
+        CheckConstraint("summary_source in ('rule_based','llm')", name="ck_story_fingerprints_summary_source"),
+    )
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    story_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("stories.id", ondelete="CASCADE"), nullable=False
+    )
+    model: Mapped[str] = mapped_column(String, nullable=False)
+    version: Mapped[str] = mapped_column(String, nullable=False, server_default="v1")
+    dimensions: Mapped[dict] = mapped_column(JSON, nullable=False)
+    summary_source: Mapped[str] = mapped_column(String, nullable=False, server_default="rule_based")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

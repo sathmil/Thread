@@ -52,6 +52,7 @@ def search(
         results=[
             SearchResultOut(
                 story_id=r.story_id,
+                story_uuid=r.story_uuid,
                 unit_type=r.unit_type,
                 unit_index=r.unit_index,
                 text_unit=r.text_unit,

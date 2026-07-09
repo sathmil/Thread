@@ -15,6 +15,7 @@ describe("DatasetPage", () => {
   it("renders one row per story", async () => {
     vi.mocked(getStories).mockResolvedValue([
       {
+        id: "11111111-1111-1111-1111-111111111111",
         external_id: "001",
         title: "A story about belonging",
         focus: "Belonging & Community",
@@ -22,6 +23,7 @@ describe("DatasetPage", () => {
         preview: "Once upon a time...",
       },
       {
+        id: "22222222-2222-2222-2222-222222222222",
         external_id: "002",
         title: "A story about school",
         focus: "Education & Access",

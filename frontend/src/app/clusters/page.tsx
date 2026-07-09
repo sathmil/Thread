@@ -1,7 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getClusters } from "@/lib/api";
@@ -32,23 +34,30 @@ export default function ClustersPage() {
 
       {data?.map((cluster) => (
         <Card key={cluster.cluster_label}>
-          <CardHeader>
-            <CardTitle className="text-base">
-              Theme {cluster.cluster_label}: {cluster.theme_name}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">{cluster.stories.length} stories</p>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <div>
+              <CardTitle className="text-base">
+                Theme {cluster.cluster_label}: {cluster.theme_name}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">{cluster.stories.length} stories</p>
+            </div>
+            <Badge variant={cluster.summary_source === "llm" ? "default" : "outline"}>
+              {cluster.summary_source === "llm" ? "AI-written" : "Auto-generated"}
+            </Badge>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm">{cluster.summary}</p>
             <div className="space-y-2">
               {cluster.stories.map((story) => (
-                <div key={story.external_id} className="rounded-md border p-3">
-                  <p className="text-sm font-medium">Story {story.external_id}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {story.title} &middot; {story.focus} &middot; {story.word_count} words
-                  </p>
-                  <p className="mt-1 text-sm">{story.preview}</p>
-                </div>
+                <Link key={story.external_id} href={`/stories/${story.story_uuid}`} className="block">
+                  <div className="rounded-md border p-3 hover:bg-muted/50">
+                    <p className="text-sm font-medium">Story {story.external_id}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {story.title} &middot; {story.focus} &middot; {story.word_count} words
+                    </p>
+                    <p className="mt-1 text-sm">{story.preview}</p>
+                  </div>
+                </Link>
               ))}
             </div>
           </CardContent>

@@ -17,6 +17,7 @@ describe("SearchPage", () => {
   it("shows the fallback story list when no query has been submitted", async () => {
     vi.mocked(getStories).mockResolvedValue([
       {
+        id: "11111111-1111-1111-1111-111111111111",
         external_id: "001",
         title: "A story about belonging",
         focus: "Belonging & Community",
@@ -39,6 +40,7 @@ describe("SearchPage", () => {
       results: [
         {
           story_id: "002",
+          story_uuid: "22222222-2222-2222-2222-222222222222",
           unit_type: "passage",
           unit_index: 2,
           text_unit: "Then we get to school, and suddenly it's like we disappear.",

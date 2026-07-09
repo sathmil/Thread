@@ -21,11 +21,42 @@ class DatasetOut(BaseModel):
 
 
 class StoryOut(BaseModel):
+    id: str
     external_id: str
     title: str | None
     focus: str | None
     word_count: int | None
     preview: str
+
+
+class StoryDetailOut(BaseModel):
+    external_id: str
+    title: str | None
+    focus: str | None
+    story_text: str
+    word_count: int | None
+    theme_name: str | None
+
+
+class FingerprintOut(BaseModel):
+    dimensions: dict[str, float]
+    source: str
+    model: str
+
+
+class JourneyEntryOut(BaseModel):
+    story_id: str
+    title: str | None
+    preview: str
+    score: float
+    same_theme: bool
+    explanation: str
+
+
+class JourneyOut(BaseModel):
+    nearest: list[JourneyEntryOut]
+    contrasting: JourneyEntryOut | None
+    reflection_questions: list[str]
 
 
 class SearchRequest(BaseModel):
@@ -38,6 +69,7 @@ class SearchRequest(BaseModel):
 
 class SearchResultOut(BaseModel):
     story_id: str
+    story_uuid: str
     unit_type: str
     unit_index: int
     text_unit: str
@@ -54,6 +86,7 @@ class SearchResponse(BaseModel):
 
 class ClusterStoryOut(BaseModel):
     external_id: str
+    story_uuid: str
     title: str | None
     focus: str | None
     word_count: int | None

@@ -57,6 +57,7 @@ def get_theme_by_story_external_id(
 @dataclass
 class ClusterStoryView:
     external_id: str
+    story_uuid: str
     title: str | None
     focus: str | None
     word_count: int | None
@@ -105,6 +106,7 @@ def get_clusters(
                 stories=[
                     ClusterStoryView(
                         external_id=story.external_id,
+                        story_uuid=str(story.id),
                         title=story.title,
                         focus=story.focus,
                         word_count=story.word_count,

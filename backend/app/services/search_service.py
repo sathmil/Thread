@@ -15,6 +15,7 @@ UNIT_TYPE_MAP = {"Sentences": "sentence", "Passages": "passage", "Stories": "sto
 @dataclass
 class SearchResult:
     story_id: str
+    story_uuid: str
     unit_type: str
     unit_index: int
     text_unit: str
@@ -54,6 +55,7 @@ def search(
     distance = column.cosine_distance(query_vector)
     stmt = (
         select(
+            Story.id,
             Story.external_id,
             TextUnit.unit_type,
             TextUnit.unit_index,
@@ -77,6 +79,7 @@ def search(
     results = [
         SearchResult(
             story_id=row.external_id,
+            story_uuid=str(row.id),
             unit_type=row.unit_type,
             unit_index=row.unit_index,
             text_unit=row.text_unit,

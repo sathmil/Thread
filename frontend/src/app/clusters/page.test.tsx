@@ -22,6 +22,7 @@ describe("ClustersPage", () => {
         stories: [
           {
             external_id: "001",
+            story_uuid: "11111111-1111-1111-1111-111111111111",
             title: "A story about belonging",
             focus: "Belonging & Community",
             word_count: 100,

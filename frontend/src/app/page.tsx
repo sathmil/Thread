@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -97,7 +98,11 @@ export default function SearchPage() {
           {fallbackStories.data?.slice(0, topK).map((story) => (
             <Card key={story.external_id}>
               <CardHeader>
-                <CardTitle className="text-base">Story {story.external_id}</CardTitle>
+                <CardTitle className="text-base">
+                  <Link href={`/stories/${story.id}`} className="hover:underline">
+                    Story {story.external_id}
+                  </Link>
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-1">
                 <p className="text-sm text-muted-foreground">{story.title}</p>
@@ -144,7 +149,10 @@ function SearchResults({
         <Card key={`${result.story_id}-${result.unit_index}`}>
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base">
-              Story {result.story_id} &middot; {result.unit_type} {result.unit_index}
+              <Link href={`/stories/${result.story_uuid}`} className="hover:underline">
+                Story {result.story_id}
+              </Link>{" "}
+              &middot; {result.unit_type} {result.unit_index}
             </CardTitle>
             <Badge>{result.score.toFixed(2)} similarity</Badge>
           </CardHeader>
