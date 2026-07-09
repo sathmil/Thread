@@ -2,7 +2,7 @@ from pathlib import Path
 import os
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 DATA_PATH = ROOT / "data" / "stories_metadata.csv"
 EMBEDDINGS_PATH = ROOT / "data" / "story_embeddings.npy"
 OPENAI_EMBEDDINGS_PATH = ROOT / "data" / "story_embeddings_openai.npy"

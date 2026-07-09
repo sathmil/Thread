@@ -1,4 +1,4 @@
-from src.data import load_stories
+from app.data import load_stories
 
 
 def test_load_stories_enriches_dataset():

@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-from src.clustering import project_embeddings, summarize_cluster
-from src.config import EMBEDDING_BACKENDS, LOCAL_MODEL_NAME, OPENAI_EMBEDDING_MODEL, SEARCH_UNITS
-from src.evaluation import evaluate_queries, load_gold
-from src.pipeline import build_story_index, build_unit_index
-from src.search import search
+from app.clustering import project_embeddings, summarize_cluster
+from app.config import EMBEDDING_BACKENDS, LOCAL_MODEL_NAME, OPENAI_EMBEDDING_MODEL, SEARCH_UNITS
+from app.evaluation import evaluate_queries, load_gold
+from app.pipeline import build_story_index, build_unit_index
+from app.search import search
 
 
 st.set_page_config(

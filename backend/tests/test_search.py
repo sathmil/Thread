@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.search import rank_by_scores
+from app.search import rank_by_scores
 
 
 def test_rank_by_scores_sorts_descending_and_limits_results():

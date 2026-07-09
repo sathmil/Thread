@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.config import DATA_PATH
-from src.text import infer_focus, infer_title, make_preview, split_text_units
+from app.config import DATA_PATH
+from app.text import infer_focus, infer_title, make_preview, split_text_units
 
 
 def load_stories(path: Path = DATA_PATH) -> pd.DataFrame:

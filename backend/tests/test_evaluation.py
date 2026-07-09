@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.evaluation import evaluate_queries, parse_expected_ids
+from app.evaluation import evaluate_queries, parse_expected_ids
 
 
 def test_parse_expected_ids_normalizes_ids():
@@ -20,7 +20,7 @@ def test_evaluate_queries_with_mocked_scores(monkeypatch):
     )
     embeddings = np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
 
-    monkeypatch.setattr("src.evaluation.semantic_scores", lambda query, emb, provider: np.array([0.1, 0.9]))
+    monkeypatch.setattr("app.evaluation.semantic_scores", lambda query, emb, provider: np.array([0.1, 0.9]))
 
     results, metrics = evaluate_queries(gold, units, embeddings, top_k=1)
 

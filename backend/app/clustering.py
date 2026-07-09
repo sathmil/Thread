@@ -4,7 +4,7 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from src.config import FOCUS_SIGNALS
+from app.config import FOCUS_SIGNALS
 
 
 def reorder_labels_by_size(labels: np.ndarray) -> np.ndarray:

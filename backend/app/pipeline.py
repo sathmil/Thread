@@ -1,10 +1,10 @@
 import pandas as pd
 import numpy as np
 
-from src.clustering import cluster_stories
-from src.data import load_stories
-from src.embeddings import embed_texts, load_or_create_story_embeddings
-from src.text import split_into_units
+from app.clustering import cluster_stories
+from app.data import load_stories
+from app.embeddings import embed_texts, load_or_create_story_embeddings
+from app.text import split_into_units
 
 
 def build_story_index(cluster_count: int = 3, provider: str = "Local MiniLM") -> tuple[pd.DataFrame, np.ndarray, dict[int, str]]:

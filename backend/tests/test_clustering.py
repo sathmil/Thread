@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.clustering import cluster_stories, project_embeddings, reorder_labels_by_size, top_terms
+from app.clustering import cluster_stories, project_embeddings, reorder_labels_by_size, top_terms
 
 
 def test_reorder_labels_by_size_makes_largest_cluster_zero():

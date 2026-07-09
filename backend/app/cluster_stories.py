@@ -2,9 +2,11 @@ import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans
 
+from app.config import DATA_PATH, EMBEDDINGS_PATH, ROOT
+
 # 1. Load stories and embeddings
-df = pd.read_csv("data/stories_metadata.csv")
-embeddings = np.load("data/story_embeddings.npy")
+df = pd.read_csv(DATA_PATH)
+embeddings = np.load(EMBEDDINGS_PATH)
 
 print(f"Loaded {len(df)} stories.")
 print("Embeddings shape:", embeddings.shape)
@@ -21,9 +23,10 @@ cluster_labels = kmeans.fit_predict(embeddings)
 df["cluster"] = cluster_labels
 
 # 5. Save results
-df.to_csv("data/clustered_stories.csv", index=False)
+clustered_path = ROOT / "data" / "clustered_stories.csv"
+df.to_csv(clustered_path, index=False)
 
-print("Saved clustered stories to data/clustered_stories.csv")
+print(f"Saved clustered stories to {clustered_path}")
 print()
 
 # 6. Print stories grouped by cluster

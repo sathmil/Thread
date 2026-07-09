@@ -2,7 +2,7 @@ import re
 
 import pandas as pd
 
-from src.config import FOCUS_SIGNALS
+from app.config import FOCUS_SIGNALS
 
 
 def make_preview(text: str, limit: int = 320) -> str:

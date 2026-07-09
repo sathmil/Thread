@@ -1,7 +1,0 @@
-pandas
-numpy
-sentence-transformers
-scikit-learn
-matplotlib
-streamlit
-pytest

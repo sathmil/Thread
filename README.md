@@ -18,32 +18,34 @@ The goal is deliberately narrower than training a custom narrative model from sc
 
 ## Current Project State
 
-The repo already contains:
+This project is mid-migration from a Streamlit prototype to a production stack (Next.js + FastAPI + Postgres/pgvector) — see the roadmap for the full plan. The Python retrieval/clustering/evaluation engine now lives under `backend/`:
 
 - `data/stories_metadata.csv`: 10 story records
 - `data/story_embeddings.npy`: cached sentence embeddings
 - `data/evaluation_gold.csv`: hand-labeled retrieval expectations
 - `data/clustered_stories.csv`: an earlier static clustering output
-- `src/data.py`: load and enrich stories
-- `src/text.py`: split stories into sentence, passage, and document units
-- `src/embeddings.py`: local and optional API-backed embedding providers
-- `src/search.py`: cosine-similarity ranking
-- `src/clustering.py`: KMeans clustering, labels, summaries, and PCA projection
-- `src/evaluation.py`: Recall@K and MRR evaluation
-- `src/pipeline.py`: reusable index-building pipeline
-- `src/cli.py`: command-line interface
-- `app.py`: interactive Streamlit explorer
-- `tests/`: pytest coverage for text processing, data loading, search, clustering, and evaluation
+- `backend/app/data.py`: load and enrich stories
+- `backend/app/text.py`: split stories into sentence, passage, and document units
+- `backend/app/embeddings.py`: local and optional API-backed embedding providers
+- `backend/app/search.py`: cosine-similarity ranking
+- `backend/app/clustering.py`: KMeans clustering, labels, summaries, and PCA projection
+- `backend/app/evaluation.py`: Recall@K and MRR evaluation
+- `backend/app/pipeline.py`: reusable index-building pipeline
+- `backend/app/cli.py`: command-line interface
+- `backend/streamlit_app.py`: interactive Streamlit explorer (prototype UI, being replaced)
+- `backend/tests/`: pytest coverage for text processing, data loading, search, clustering, and evaluation
 - `docs/architecture.md`: system design and scaling notes
 - `docs/demo_walkthrough.md`: demo flow and screenshot checklist
 - `docs/evaluation_queries.csv`: repeatable retrieval checks
 - `docs/portfolio_summary.md`: portfolio/interview framing
+- `docker-compose.yml`: local Postgres+pgvector service (backend API/frontend containers land in later milestones)
 
 ## Run It
 
 ```bash
 source myenv/bin/activate
-streamlit run app.py --server.fileWatcherType none
+cd backend
+streamlit run streamlit_app.py --server.fileWatcherType none
 ```
 
 If the cached embeddings are missing or out of date, the app regenerates them with `all-MiniLM-L6-v2`.
@@ -57,7 +59,7 @@ The app defaults to local MiniLM embeddings so it works offline. To test the API
 ```bash
 export OPENAI_API_KEY="your-api-key"
 export OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
-streamlit run app.py --server.fileWatcherType none
+cd backend && streamlit run streamlit_app.py --server.fileWatcherType none
 ```
 
 Then choose `OpenAI API` in the sidebar.
@@ -65,14 +67,16 @@ Then choose `OpenAI API` in the sidebar.
 ## CLI
 
 ```bash
-python -m src.cli search "finding my voice" --unit Passages --top-k 5
-python -m src.cli cluster --clusters 4
-python -m src.cli evaluate --unit Passages --top-k 3
+cd backend
+python -m app.cli search "finding my voice" --unit Passages --top-k 5
+python -m app.cli cluster --clusters 4
+python -m app.cli evaluate --unit Passages --top-k 3
 ```
 
 ## Tests
 
 ```bash
+cd backend
 pytest
 ```
 

@@ -2,11 +2,11 @@ import argparse
 
 import pandas as pd
 
-from src.clustering import summarize_cluster
-from src.config import SEARCH_UNITS
-from src.evaluation import evaluate_queries, load_gold
-from src.pipeline import build_story_index, build_unit_index
-from src.search import search
+from app.clustering import summarize_cluster
+from app.config import SEARCH_UNITS
+from app.evaluation import evaluate_queries, load_gold
+from app.pipeline import build_story_index, build_unit_index
+from app.search import search
 
 
 def cmd_search(args: argparse.Namespace) -> None:

@@ -8,7 +8,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import HashingVectorizer
 
-from src.config import EMBEDDINGS_PATH, LOCAL_MODEL_NAME, OPENAI_EMBEDDING_MODEL, OPENAI_EMBEDDINGS_PATH
+from app.config import EMBEDDINGS_PATH, LOCAL_MODEL_NAME, OPENAI_EMBEDDING_MODEL, OPENAI_EMBEDDINGS_PATH
 
 
 @lru_cache(maxsize=2)

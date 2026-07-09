@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from src.text import infer_focus, make_preview, split_into_units, split_text_units
+from app.text import infer_focus, make_preview, split_into_units, split_text_units
 
 
 def test_split_text_units_supports_sentence_passage_and_story_modes():

@@ -3,8 +3,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.config import EVALUATION_GOLD_PATH
-from src.search import rank_by_scores, semantic_scores
+from app.config import EVALUATION_GOLD_PATH
+from app.search import rank_by_scores, semantic_scores
 
 
 def load_gold(path: Path = EVALUATION_GOLD_PATH) -> pd.DataFrame:

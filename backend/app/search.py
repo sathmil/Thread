@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 
-from src.embeddings import embed_texts
+from app.embeddings import embed_texts
 
 
 def semantic_scores(query: str, embeddings: np.ndarray, provider: str = "Local MiniLM") -> np.ndarray:

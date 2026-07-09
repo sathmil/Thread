@@ -1,6 +1,8 @@
 import pandas as pd
 
-stories = pd.read_csv("data/stories_metadata.csv")
+from app.config import DATA_PATH
+
+stories = pd.read_csv(DATA_PATH)
 
 print(stories.head())
 print()
