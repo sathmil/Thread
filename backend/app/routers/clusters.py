@@ -16,11 +16,12 @@ router = APIRouter()
 @router.get("/clusters", response_model=list[ClusterOut])
 def list_clusters(
     dataset_id: uuid.UUID | None = Query(default=None),
+    embedding_model: str | None = Query(default=None),
     user: User | None = Depends(get_current_user),
     session: Session = Depends(get_db),
 ) -> list[ClusterOut]:
     dataset = resolve_dataset(session, dataset_id, user)
-    clusters = cluster_service.get_clusters(session, dataset)
+    clusters = cluster_service.get_clusters(session, dataset, embedding_model)
     return [
         ClusterOut(
             cluster_label=c.cluster_label,
@@ -45,11 +46,12 @@ def list_clusters(
 @router.get("/clusters/projection", response_model=list[ProjectionPointOut])
 def get_projection(
     dataset_id: uuid.UUID | None = Query(default=None),
+    embedding_model: str | None = Query(default=None),
     user: User | None = Depends(get_current_user),
     session: Session = Depends(get_db),
 ) -> list[ProjectionPointOut]:
     dataset = resolve_dataset(session, dataset_id, user)
-    points = cluster_service.get_projection(session, dataset)
+    points = cluster_service.get_projection(session, dataset, embedding_model)
     return [
         ProjectionPointOut(
             external_id=p.external_id,

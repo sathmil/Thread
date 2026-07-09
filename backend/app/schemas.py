@@ -106,6 +106,10 @@ class IndexRequest(BaseModel):
     embedding_model: str = "Local MiniLM"
 
 
+class ReindexRequest(BaseModel):
+    embedding_model: str = "OpenAI API"
+
+
 class JobOut(BaseModel):
     id: str
     dataset_id: str
@@ -117,3 +121,4 @@ class JobOut(BaseModel):
     embedding_ms: float | None
     avg_embedding_ms_per_story: float | None
     error_message: str | None
+    warning_message: str | None

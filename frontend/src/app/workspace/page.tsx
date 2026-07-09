@@ -14,6 +14,7 @@ import {
   getDatasets,
   getJob,
   indexDataset,
+  reindexDataset,
   uploadStories,
   type DatasetOut,
 } from "@/lib/api";
@@ -145,6 +146,15 @@ function DatasetCard({ dataset, getToken }: { dataset: DatasetOut; getToken: Get
     onSuccess: (job) => setActiveJobId(job.id),
   });
 
+  const reindexMutation = useMutation({
+    mutationFn: async () => {
+      const token = await getToken();
+      if (!token) throw new Error("Sign in required.");
+      return reindexDataset(dataset.id, token, "OpenAI API");
+    },
+    onSuccess: (job) => setActiveJobId(job.id),
+  });
+
   const jobQuery = useQuery({
     queryKey: ["job", activeJobId],
     queryFn: async () => getJob(activeJobId as string, await getToken()),
@@ -190,6 +200,15 @@ function DatasetCard({ dataset, getToken }: { dataset: DatasetOut; getToken: Get
             >
               {isIndexing ? `Indexing... ${job?.progress_pct ?? 0}%` : "Index"}
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => reindexMutation.mutate()}
+              disabled={reindexMutation.isPending || isIndexing}
+              title="Recompute embeddings under OpenAI's model, without deleting the existing ones"
+            >
+              Re-index (OpenAI)
+            </Button>
           </div>
         )}
 
@@ -202,6 +221,9 @@ function DatasetCard({ dataset, getToken }: { dataset: DatasetOut; getToken: Get
         {indexMutation.error && (
           <p className="text-xs text-destructive">{(indexMutation.error as Error).message}</p>
         )}
+        {reindexMutation.error && (
+          <p className="text-xs text-destructive">{(reindexMutation.error as Error).message}</p>
+        )}
 
         {job && job.status === "succeeded" && (
           <p className="text-xs text-muted-foreground">
@@ -211,6 +233,9 @@ function DatasetCard({ dataset, getToken }: { dataset: DatasetOut; getToken: Get
               : ""}
             .
           </p>
+        )}
+        {job && job.warning_message && (
+          <p className="text-xs text-amber-600">{job.warning_message}</p>
         )}
         {job && job.status === "failed" && (
           <p className="text-xs text-destructive">Indexing failed: {job.error_message}</p>

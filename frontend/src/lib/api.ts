@@ -96,6 +96,7 @@ export type JobOut = {
   embedding_ms: number | null;
   avg_embedding_ms_per_story: number | null;
   error_message: string | null;
+  warning_message: string | null;
 };
 
 async function fetchJson<T>(path: string, init?: RequestInit & { token?: string | null }): Promise<T> {
@@ -188,4 +189,16 @@ export function indexDataset(
 
 export function getJob(jobId: string, token?: string | null): Promise<JobOut> {
   return fetchJson<JobOut>(`/jobs/${jobId}`, { token });
+}
+
+export function reindexDataset(
+  datasetId: string,
+  token: string,
+  embeddingModel: string = "OpenAI API"
+): Promise<JobOut> {
+  return fetchJson<JobOut>(`/datasets/${datasetId}/reindex`, {
+    method: "POST",
+    body: JSON.stringify({ embedding_model: embeddingModel }),
+    token,
+  });
 }

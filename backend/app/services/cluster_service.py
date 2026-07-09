@@ -6,23 +6,31 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.clustering import project_embeddings
+from app.config import LOCAL_MODEL_NAME
 from app.models import Cluster, ClusterAssignment, Dataset, Embedding, Story, TextUnit
+from app.services.embedding_columns import vector_column_for_model_id
 from app.text import make_preview
 
 
-def _latest_cluster_run_id(session: Session, dataset_id: uuid.UUID) -> uuid.UUID | None:
+def _latest_cluster_run_id(
+    session: Session, dataset_id: uuid.UUID, embedding_model: str | None = None
+) -> uuid.UUID | None:
+    stmt = select(Cluster.cluster_run_id).where(Cluster.dataset_id == dataset_id)
+    if embedding_model is not None:
+        stmt = stmt.where(Cluster.embedding_model == embedding_model)
+    return session.execute(stmt.order_by(Cluster.created_at.desc()).limit(1)).scalar_one_or_none()
+
+
+def _run_embedding_model(session: Session, run_id: uuid.UUID) -> str | None:
     return session.execute(
-        select(Cluster.cluster_run_id)
-        .where(Cluster.dataset_id == dataset_id)
-        .order_by(Cluster.created_at.desc())
-        .limit(1)
+        select(Cluster.embedding_model).where(Cluster.cluster_run_id == run_id).limit(1)
     ).scalar_one_or_none()
 
 
 def _cluster_info_by_story_external_id(
-    session: Session, dataset_id: uuid.UUID
+    session: Session, dataset_id: uuid.UUID, embedding_model: str | None = None
 ) -> dict[str, tuple[int, str | None]]:
-    run_id = _latest_cluster_run_id(session, dataset_id)
+    run_id = _latest_cluster_run_id(session, dataset_id, embedding_model)
     if run_id is None:
         return {}
     rows = session.execute(
@@ -35,10 +43,14 @@ def _cluster_info_by_story_external_id(
     return {row.external_id: (row.cluster_label, row.theme_name) for row in rows}
 
 
-def get_theme_by_story_external_id(session: Session, dataset_id: uuid.UUID) -> dict[str, str]:
+def get_theme_by_story_external_id(
+    session: Session, dataset_id: uuid.UUID, embedding_model: str | None = None
+) -> dict[str, str]:
     return {
         external_id: theme
-        for external_id, (_, theme) in _cluster_info_by_story_external_id(session, dataset_id).items()
+        for external_id, (_, theme) in _cluster_info_by_story_external_id(
+            session, dataset_id, embedding_model
+        ).items()
     }
 
 
@@ -60,8 +72,10 @@ class ClusterView:
     stories: list[ClusterStoryView]
 
 
-def get_clusters(session: Session, dataset: Dataset) -> list[ClusterView]:
-    run_id = _latest_cluster_run_id(session, dataset.id)
+def get_clusters(
+    session: Session, dataset: Dataset, embedding_model: str | None = None
+) -> list[ClusterView]:
+    run_id = _latest_cluster_run_id(session, dataset.id, embedding_model)
     if run_id is None:
         return []
 
@@ -114,17 +128,34 @@ class ProjectionPoint:
     theme_name: str | None
 
 
-def get_projection(session: Session, dataset: Dataset) -> list[ProjectionPoint]:
+def get_projection(
+    session: Session, dataset: Dataset, embedding_model: str | None = None
+) -> list[ProjectionPoint]:
     """2D PCA projection of whole-story embeddings, for the map view.
     Reuses app.clustering.project_embeddings() as-is (PCA is fine at this
-    scale; flagged for a UMAP swap once M6's larger dataset lands).
+    scale; flagged for a UMAP swap once a larger dataset lands). embedding_model
+    here (like Cluster.embedding_model) is the stored model id, not a
+    provider label — when not given, resolves to whichever model produced
+    the most recent cluster run (falling back to the local model's id if
+    none exist yet) rather than assuming MiniLM outright — correct once a
+    dataset has been reindexed under a different model.
     """
+    run_id = _latest_cluster_run_id(session, dataset.id, embedding_model)
+    resolved_model = embedding_model or (
+        _run_embedding_model(session, run_id) if run_id else LOCAL_MODEL_NAME
+    )
+    column = vector_column_for_model_id(resolved_model)
+
     rows = session.execute(
-        select(Story, Embedding.vector_384)
+        select(Story, column)
         .select_from(Story)
         .join(TextUnit, TextUnit.story_id == Story.id)
         .join(Embedding, Embedding.text_unit_id == TextUnit.id)
-        .where(Story.dataset_id == dataset.id, TextUnit.unit_type == "story")
+        .where(
+            Story.dataset_id == dataset.id,
+            TextUnit.unit_type == "story",
+            Embedding.embedding_model == resolved_model,
+        )
         .order_by(Story.external_id)
     ).all()
 
@@ -134,7 +165,7 @@ def get_projection(session: Session, dataset: Dataset) -> list[ProjectionPoint]:
     stories = [row[0] for row in rows]
     vectors = np.array([row[1] for row in rows])
     coords = project_embeddings(vectors)
-    cluster_info = _cluster_info_by_story_external_id(session, dataset.id)
+    cluster_info = _cluster_info_by_story_external_id(session, dataset.id, embedding_model)
 
     points = []
     for story, (x, y) in zip(stories, coords):

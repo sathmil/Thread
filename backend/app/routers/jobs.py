@@ -24,6 +24,7 @@ def job_to_out(job: Job) -> JobOut:
         embedding_ms=job.embedding_ms,
         avg_embedding_ms_per_story=job.avg_embedding_ms_per_story,
         error_message=job.error_message,
+        warning_message=job.warning_message,
     )
 
 

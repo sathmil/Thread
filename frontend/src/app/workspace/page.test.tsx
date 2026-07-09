@@ -9,6 +9,7 @@ vi.mock("@/lib/api", () => ({
   createDataset: vi.fn(),
   uploadStories: vi.fn(),
   indexDataset: vi.fn(),
+  reindexDataset: vi.fn(),
   getJob: vi.fn(),
 }));
 
@@ -18,7 +19,7 @@ vi.mock("@clerk/nextjs", () => ({
 
 import { useAuth } from "@clerk/nextjs";
 
-import { getDatasets, getJob, indexDataset } from "@/lib/api";
+import { getDatasets, getJob, indexDataset, reindexDataset } from "@/lib/api";
 
 import WorkspacePage from "./page";
 
@@ -100,6 +101,7 @@ describe("WorkspacePage", () => {
       embedding_ms: 80,
       avg_embedding_ms_per_story: 16,
       error_message: null,
+      warning_message: null,
     });
     vi.mocked(getJob).mockResolvedValue({
       id: "job-1",
@@ -112,6 +114,7 @@ describe("WorkspacePage", () => {
       embedding_ms: 80,
       avg_embedding_ms_per_story: 16,
       error_message: null,
+      warning_message: null,
     });
 
     const user = userEvent.setup();
@@ -123,6 +126,44 @@ describe("WorkspacePage", () => {
     await user.click(indexButton);
 
     expect(await screen.findByText(/Indexed 5 stories/)).toBeInTheDocument();
+  });
+
+  it("shows a warning message after re-indexing falls back to a different provider", async () => {
+    vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "pk_test_123");
+    mockSignedIn();
+    vi.mocked(getDatasets).mockResolvedValue([
+      {
+        id: "ds-1",
+        name: "My private dataset",
+        description: null,
+        visibility: "private",
+        status: "ready",
+        owner_user_id: "user-a",
+      },
+    ]);
+    const jobWithWarning = {
+      id: "job-2",
+      dataset_id: "ds-1",
+      job_type: "reindex",
+      status: "succeeded" as const,
+      progress_pct: 100,
+      story_count: 5,
+      duration_ms: 90,
+      embedding_ms: 40,
+      avg_embedding_ms_per_story: 8,
+      error_message: null,
+      warning_message: "OPENAI_API_KEY is not set — used Local MiniLM instead of OpenAI API.",
+    };
+    vi.mocked(reindexDataset).mockResolvedValue(jobWithWarning);
+    vi.mocked(getJob).mockResolvedValue(jobWithWarning);
+
+    const user = userEvent.setup();
+    renderWithQueryClient(<WorkspacePage />);
+
+    expect(await screen.findByText("My private dataset")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Re-index (OpenAI)" }));
+
+    expect(await screen.findByText(/used Local MiniLM instead of OpenAI API/)).toBeInTheDocument();
   });
 
   it("does not show upload/index controls for public datasets", async () => {

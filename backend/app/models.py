@@ -241,6 +241,7 @@ class Job(Base):
     status: Mapped[str] = mapped_column(String, nullable=False, server_default="queued")
     celery_task_id: Mapped[str | None] = mapped_column(String)
     error_message: Mapped[str | None] = mapped_column(Text)
+    warning_message: Mapped[str | None] = mapped_column(Text)
     progress_pct: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     story_count: Mapped[int | None] = mapped_column(Integer)
     duration_ms: Mapped[float | None] = mapped_column(Float)

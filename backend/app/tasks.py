@@ -32,6 +32,7 @@ def index_dataset_task(self, job_id: str, dataset_id: str, embedding_model: str 
         job.avg_embedding_ms_per_story = (
             result.embedding_ms / result.story_count if result.story_count else None
         )
+        job.warning_message = result.warning
         job.progress_pct = 90
         session.commit()
 
@@ -41,9 +42,9 @@ def index_dataset_task(self, job_id: str, dataset_id: str, embedding_model: str 
             job.duration_ms = (time.perf_counter() - start) * 1000
             dataset.status = "ready"
             session.commit()
-            cluster_dataset_task.delay(dataset_id, embedding_model)
+            cluster_dataset_task.delay(dataset_id, result.actual_embedding_model)
         else:
-            indexing_service.cluster_dataset(session, dataset, embedding_model)
+            indexing_service.cluster_dataset(session, dataset, result.actual_embedding_model)
             job.status = "succeeded"
             job.progress_pct = 100
             job.duration_ms = (time.perf_counter() - start) * 1000
