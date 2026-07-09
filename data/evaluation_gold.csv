@@ -1,0 +1,8 @@
+query,expected_story_ids,rationale
+feeling invisible at school,002|003,"Stories about erasure, being unseen, or being asked to represent identity at school."
+finding my voice,001|003|005,"Stories about speaking up, being heard, or refusing silence."
+cultural identity and belonging,001|002|003,"Stories centered on identity, language, representation, and belonging."
+education access and curiosity,004,"Story about scarce educational resources and self-directed learning."
+community built through showing up,001,"Story about building community through consistent service and presence."
+being misunderstood by others,002|003|005,"Stories where others misread or flatten the narrator's identity."
+mentorship and helping someone grow,001,"Story about mentoring a younger teammate and helping her grow."
