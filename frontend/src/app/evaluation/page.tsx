@@ -76,32 +76,36 @@ export default function EvaluationPage() {
             />
           </div>
 
-          <Table className="table-fixed">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-64">Query</TableHead>
-                <TableHead className="w-28">Expected</TableHead>
-                <TableHead className="w-28">Retrieved</TableHead>
-                <TableHead className="w-16">Hit</TableHead>
-                <TableHead className="w-32">Reciprocal rank</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.results.map((result) => (
-                <TableRow key={result.query}>
-                  <TableCell className="truncate">{result.query}</TableCell>
-                  <TableCell className="truncate">{result.expected_story_ids.join(", ")}</TableCell>
-                  <TableCell className="truncate">{result.retrieved_story_ids.join(", ")}</TableCell>
-                  <TableCell>
-                    <Badge variant={result.hit_at_k ? "default" : "secondary"}>
-                      {result.hit_at_k ? "hit" : "miss"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{result.reciprocal_rank.toFixed(2)}</TableCell>
+          {data.results.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No gold queries for this dataset yet.</p>
+          ) : (
+            <Table className="table-fixed">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-64">Query</TableHead>
+                  <TableHead className="w-28">Expected</TableHead>
+                  <TableHead className="w-28">Retrieved</TableHead>
+                  <TableHead className="w-16">Hit</TableHead>
+                  <TableHead className="w-32">Reciprocal rank</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {data.results.map((result) => (
+                  <TableRow key={result.query}>
+                    <TableCell className="truncate">{result.query}</TableCell>
+                    <TableCell className="truncate">{result.expected_story_ids.join(", ")}</TableCell>
+                    <TableCell className="truncate">{result.retrieved_story_ids.join(", ")}</TableCell>
+                    <TableCell>
+                      <Badge variant={result.hit_at_k ? "default" : "secondary"}>
+                        {result.hit_at_k ? "hit" : "miss"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{result.reciprocal_rank.toFixed(2)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </>
       )}
     </div>

@@ -27,8 +27,9 @@ export default function DatasetPage() {
 
       {isLoading && <Skeleton className="h-64 w-full" />}
       {error && <p className="text-sm text-destructive">Could not load stories.</p>}
+      {data?.length === 0 && <p className="text-sm text-muted-foreground">No stories in this dataset yet.</p>}
 
-      {data && (
+      {data && data.length > 0 && (
         <Table className="table-fixed">
           <TableHeader>
             <TableRow>

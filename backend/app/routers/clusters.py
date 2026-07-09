@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.deps import get_db
-from app.schemas import ClusterOut, ClusterStoryOut
+from app.schemas import ClusterOut, ClusterStoryOut, ProjectionPointOut
 from app.services import cluster_service
 from app.services.dataset_service import get_default_dataset
 
@@ -31,4 +31,22 @@ def list_clusters(session: Session = Depends(get_db)) -> list[ClusterOut]:
             ],
         )
         for c in clusters
+    ]
+
+
+@router.get("/clusters/projection", response_model=list[ProjectionPointOut])
+def get_projection(session: Session = Depends(get_db)) -> list[ProjectionPointOut]:
+    dataset = get_default_dataset(session)
+    points = cluster_service.get_projection(session, dataset)
+    return [
+        ProjectionPointOut(
+            external_id=p.external_id,
+            title=p.title,
+            preview=p.preview,
+            x=p.x,
+            y=p.y,
+            cluster_label=p.cluster_label,
+            theme_name=p.theme_name,
+        )
+        for p in points
     ]

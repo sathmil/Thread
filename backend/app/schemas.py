@@ -53,6 +53,16 @@ class ClusterOut(BaseModel):
     stories: list[ClusterStoryOut]
 
 
+class ProjectionPointOut(BaseModel):
+    external_id: str
+    title: str | None
+    preview: str
+    x: float
+    y: float
+    cluster_label: int | None
+    theme_name: str | None
+
+
 class EvaluationResultOut(BaseModel):
     query: str
     expected_story_ids: list[str]

@@ -77,13 +77,23 @@ export default function SearchPage() {
       </form>
 
       {submittedQuery ? (
-        <SearchResults isLoading={searchResult.isLoading} data={searchResult.data} />
+        <SearchResults
+          isLoading={searchResult.isLoading}
+          error={searchResult.error}
+          data={searchResult.data}
+        />
       ) : (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
             Type a theme, phrase, or research question to retrieve the closest stories.
           </p>
           {fallbackStories.isLoading && <Skeleton className="h-24 w-full" />}
+          {fallbackStories.error && (
+            <p className="text-sm text-destructive">Could not load stories.</p>
+          )}
+          {fallbackStories.data?.length === 0 && (
+            <p className="text-sm text-muted-foreground">No stories in this dataset yet.</p>
+          )}
           {fallbackStories.data?.slice(0, topK).map((story) => (
             <Card key={story.external_id}>
               <CardHeader>
@@ -104,9 +114,11 @@ export default function SearchPage() {
 
 function SearchResults({
   isLoading,
+  error,
   data,
 }: {
   isLoading: boolean;
+  error: Error | null;
   data: Awaited<ReturnType<typeof search>> | undefined;
 }) {
   if (isLoading) {
@@ -116,6 +128,10 @@ function SearchResults({
         <Skeleton className="h-24 w-full" />
       </div>
     );
+  }
+
+  if (error) {
+    return <p className="text-sm text-destructive">Search failed: {error.message}</p>;
   }
 
   if (!data || data.results.length === 0) {

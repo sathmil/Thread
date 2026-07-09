@@ -62,6 +62,16 @@ export type EvaluationRunOut = {
   results: EvaluationResultOut[];
 };
 
+export type ProjectionPointOut = {
+  external_id: string;
+  title: string | null;
+  preview: string;
+  x: number;
+  y: number;
+  cluster_label: number | null;
+  theme_name: string | null;
+};
+
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -92,4 +102,8 @@ export function search(payload: { query: string; unit: SearchUnit; top_k: number
 export function getEvaluationRun(params: { unit: SearchUnit; top_k: number }): Promise<EvaluationRunOut> {
   const query = new URLSearchParams({ unit: params.unit, top_k: String(params.top_k) });
   return fetchJson<EvaluationRunOut>(`/evaluation/run?${query.toString()}`);
+}
+
+export function getProjection(): Promise<ProjectionPointOut[]> {
+  return fetchJson<ProjectionPointOut[]>("/clusters/projection");
 }

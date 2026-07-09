@@ -26,6 +26,9 @@ export default function ClustersPage() {
       )}
 
       {error && <p className="text-sm text-destructive">Could not load clusters.</p>}
+      {data?.length === 0 && (
+        <p className="text-sm text-muted-foreground">No themes yet — index a dataset to generate clusters.</p>
+      )}
 
       {data?.map((cluster) => (
         <Card key={cluster.cluster_label}>
