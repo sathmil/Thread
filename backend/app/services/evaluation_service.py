@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Dataset, EvaluationQuery, EvaluationQueryExpectedStory, EvaluationResult, EvaluationRun, Story
 from app.services import search_service
+from app.services.embedding_columns import resolve_provider
 
 # Large enough to cover every text unit in a small dataset, so reciprocal-rank
 # calculation sees the true rank rather than being truncated at top_k. At real
@@ -19,6 +20,13 @@ def run_evaluation(
     top_k: int = 3,
     provider: str = "Local MiniLM",
 ) -> EvaluationRun:
+    # Resolved up front so the persisted run's embedding_model always
+    # reflects what was actually used (e.g. "OpenAI API" silently falling
+    # back to Local MiniLM without a key) — otherwise the historical/
+    # model-comparison view (roadmap M8) could show a run mislabeled under
+    # a model it never actually queried.
+    actual_provider, _ = resolve_provider(provider)
+
     queries = (
         session.execute(select(EvaluationQuery).where(EvaluationQuery.dataset_id == dataset.id))
         .scalars()
@@ -27,6 +35,7 @@ def run_evaluation(
 
     recall_hits: list[int] = []
     reciprocal_ranks: list[float] = []
+    precisions: list[float] = []
     latencies: list[float] = []
     pending_results: list[dict] = []
 
@@ -43,7 +52,9 @@ def run_evaluation(
         )
 
         start = time.perf_counter()
-        results, _ = search_service.search(session, dataset, query.query_text, unit, _FULL_RANKING_LIMIT, provider)
+        results, _ = search_service.search(
+            session, dataset, query.query_text, unit, _FULL_RANKING_LIMIT, actual_provider
+        )
         latency_ms = (time.perf_counter() - start) * 1000
         latencies.append(latency_ms)
 
@@ -55,6 +66,12 @@ def run_evaluation(
         reciprocal_rank = (1 / first_rank) if first_rank else 0.0
         reciprocal_ranks.append(reciprocal_rank)
         recall_hits.append(1 if hit else 0)
+
+        # Precision@K: fraction of the top_k retrieved that are actually
+        # expected — distinct from Recall@K (whether *any* hit landed in the
+        # top_k) and from MRR (how early the *first* hit landed).
+        relevant_in_top_k = sum(1 for sid in top_ids if sid in expected_ids)
+        precisions.append(relevant_in_top_k / top_k if top_k else 0.0)
 
         pending_results.append(
             dict(
@@ -69,11 +86,12 @@ def run_evaluation(
 
     run = EvaluationRun(
         dataset_id=dataset.id,
-        embedding_model=provider,
+        embedding_model=actual_provider,
         unit_type=unit,
         top_k=top_k,
         recall_at_k=(sum(recall_hits) / len(recall_hits)) if recall_hits else 0.0,
         mrr=(sum(reciprocal_ranks) / len(reciprocal_ranks)) if reciprocal_ranks else 0.0,
+        precision_at_k=(sum(precisions) / len(precisions)) if precisions else 0.0,
         avg_latency_ms=(sum(latencies) / len(latencies)) if latencies else None,
     )
     session.add(run)

@@ -140,8 +140,22 @@ class EvaluationRunOut(BaseModel):
     top_k: int
     recall_at_k: float
     mrr: float
+    precision_at_k: float | None
     avg_latency_ms: float | None
+    created_at: str
     results: list[EvaluationResultOut]
+
+
+class EvaluationRunSummaryOut(BaseModel):
+    run_id: str
+    embedding_model: str
+    unit_type: str
+    top_k: int
+    recall_at_k: float
+    mrr: float
+    precision_at_k: float | None
+    avg_latency_ms: float | None
+    created_at: str
 
 
 class UploadResult(BaseModel):

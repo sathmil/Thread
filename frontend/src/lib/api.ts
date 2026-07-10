@@ -91,8 +91,22 @@ export type EvaluationRunOut = {
   top_k: number;
   recall_at_k: number;
   mrr: number;
+  precision_at_k: number | null;
   avg_latency_ms: number | null;
+  created_at: string;
   results: EvaluationResultOut[];
+};
+
+export type EvaluationRunSummaryOut = {
+  run_id: string;
+  embedding_model: string;
+  unit_type: string;
+  top_k: number;
+  recall_at_k: number;
+  mrr: number;
+  precision_at_k: number | null;
+  avg_latency_ms: number | null;
+  created_at: string;
 };
 
 export type ProjectionPointOut = {
@@ -215,9 +229,25 @@ export function search(payload: { query: string; unit: SearchUnit; top_k: number
   });
 }
 
-export function getEvaluationRun(params: { unit: SearchUnit; top_k: number }): Promise<EvaluationRunOut> {
-  const query = new URLSearchParams({ unit: params.unit, top_k: String(params.top_k) });
+export function getEvaluationRun(params: {
+  unit: SearchUnit;
+  top_k: number;
+  embedding_model?: string;
+}): Promise<EvaluationRunOut> {
+  const query = new URLSearchParams({
+    unit: params.unit,
+    top_k: String(params.top_k),
+    ...(params.embedding_model ? { embedding_model: params.embedding_model } : {}),
+  });
   return fetchJson<EvaluationRunOut>(`/evaluation/run?${query.toString()}`);
+}
+
+export function getEvaluationRuns(): Promise<EvaluationRunSummaryOut[]> {
+  return fetchJson<EvaluationRunSummaryOut[]>("/evaluation/runs");
+}
+
+export function getEvaluationRunDetail(runId: string): Promise<EvaluationRunOut> {
+  return fetchJson<EvaluationRunOut>(`/evaluation/runs/${runId}`);
 }
 
 export function getProjection(): Promise<ProjectionPointOut[]> {
