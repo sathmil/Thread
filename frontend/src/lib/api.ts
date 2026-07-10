@@ -106,6 +106,32 @@ export type ProjectionPointOut = {
   theme_name: string | null;
 };
 
+export type ToolCallOut = {
+  tool: string;
+  arguments: Record<string, unknown>;
+};
+
+export type QueryResponse = {
+  available: boolean;
+  answer: string;
+  tool_calls: ToolCallOut[];
+};
+
+export type MirrorMatchOut = {
+  story_id: string;
+  title: string | null;
+  preview: string;
+  score: number;
+  theme: string | null;
+  explanation: string;
+};
+
+export type MirrorResponse = {
+  matches: MirrorMatchOut[];
+  fingerprint: Record<string, number>;
+  fingerprint_source: string;
+};
+
 export type InsightFindingOut = {
   finding_type: string;
   finding_text: string;
@@ -196,6 +222,20 @@ export function getEvaluationRun(params: { unit: SearchUnit; top_k: number }): P
 
 export function getProjection(): Promise<ProjectionPointOut[]> {
   return fetchJson<ProjectionPointOut[]>("/clusters/projection");
+}
+
+export function askQuestion(question: string, datasetId?: string): Promise<QueryResponse> {
+  return fetchJson<QueryResponse>("/query", {
+    method: "POST",
+    body: JSON.stringify({ question, dataset_id: datasetId }),
+  });
+}
+
+export function mirrorStory(storyText: string, topK: number = 3): Promise<MirrorResponse> {
+  return fetchJson<MirrorResponse>("/mirror", {
+    method: "POST",
+    body: JSON.stringify({ story_text: storyText, top_k: topK }),
+  });
 }
 
 export function getInsights(datasetId: string, token?: string | null): Promise<InsightFindingOut[]> {

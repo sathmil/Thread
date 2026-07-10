@@ -108,7 +108,7 @@ def get_journey(
             preview=make_preview(other.story_text),
             score=round(score, 4),
             same_theme=themes.get(other.external_id) == own_theme,
-            explanation=fingerprint_service.explain_similarity(own_fingerprint, other_fingerprint),
+            explanation=fingerprint_service.explain_similarity(own_fingerprint.dimensions, other_fingerprint.dimensions),
         )
 
     return JourneyOut(

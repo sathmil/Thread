@@ -168,3 +168,39 @@ class JobOut(BaseModel):
     avg_embedding_ms_per_story: float | None
     error_message: str | None
     warning_message: str | None
+
+
+class QueryRequest(BaseModel):
+    question: str
+    dataset_id: str | None = None
+
+
+class ToolCallOut(BaseModel):
+    tool: str
+    arguments: dict
+
+
+class QueryResponse(BaseModel):
+    available: bool
+    answer: str
+    tool_calls: list[ToolCallOut]
+
+
+class MirrorRequest(BaseModel):
+    story_text: str
+    top_k: int = 3
+
+
+class MirrorMatchOut(BaseModel):
+    story_id: str
+    title: str | None
+    preview: str
+    score: float
+    theme: str | None
+    explanation: str
+
+
+class MirrorResponse(BaseModel):
+    matches: list[MirrorMatchOut]
+    fingerprint: dict[str, float]
+    fingerprint_source: str

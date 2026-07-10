@@ -46,11 +46,24 @@ def _llm_fingerprint(story_text: str) -> dict[str, float] | None:
         return None
 
 
+def score_text(text: str) -> tuple[dict[str, float], str, str]:
+    """Returns (dimensions, source, model): tries the LLM first, falls back
+    to the deterministic keyword scorer on any failure or missing API key.
+    Shared by compute_fingerprint's cached-and-persisted path (below) and
+    mirror_service's ad hoc, uncached scoring of pasted (non-Story) text —
+    the same provider-dispatch-with-fallback pattern used throughout, just
+    without a Story row to cache against.
+    """
+    llm_scores = _llm_fingerprint(text)
+    if llm_scores is not None:
+        return llm_scores, "llm", DEFAULT_MODEL
+    return _keyword_fingerprint(text), "rule_based", KEYWORD_MODEL_ID
+
+
 def compute_fingerprint(session: Session, story: Story) -> StoryFingerprint:
     """Returns the cached fingerprint if one already exists for this story
     (versioned the same way as embeddings — see the roadmap), otherwise
-    computes one: tries the LLM first, falls back to the deterministic
-    keyword scorer on any failure or missing API key.
+    computes and persists one via score_text().
     """
     existing = session.execute(
         select(StoryFingerprint).where(
@@ -61,11 +74,7 @@ def compute_fingerprint(session: Session, story: Story) -> StoryFingerprint:
     if existing is not None:
         return existing
 
-    llm_scores = _llm_fingerprint(story.story_text)
-    if llm_scores is not None:
-        dimensions, source, model = llm_scores, "llm", DEFAULT_MODEL
-    else:
-        dimensions, source, model = _keyword_fingerprint(story.story_text), "rule_based", KEYWORD_MODEL_ID
+    dimensions, source, model = score_text(story.story_text)
 
     fingerprint = StoryFingerprint(
         story_id=story.id,
@@ -101,13 +110,14 @@ def reflection_questions(fingerprint: StoryFingerprint, top_n: int = 2) -> list[
     return [_REFLECTION_QUESTION_TEMPLATES[dimension] for dimension in dominant_dimensions(fingerprint, top_n)]
 
 
-def explain_similarity(fingerprint_a: StoryFingerprint, fingerprint_b: StoryFingerprint) -> str:
+def explain_similarity(dims_a: dict[str, float], dims_b: dict[str, float]) -> str:
     """Grounded in the actual fingerprint deltas — the LLM (when available)
     only phrases a computed comparison, it never invents the similarity
-    itself, per the roadmap's explicit design for this feature.
+    itself, per the roadmap's explicit design for this feature. Takes plain
+    dimension dicts (not StoryFingerprint rows) so it works equally for two
+    stored stories (M7.5) or one stored story plus an ad hoc, unpersisted
+    piece of text (M8.7's "mirror my story").
     """
-    dims_a, dims_b = fingerprint_a.dimensions, fingerprint_b.dimensions
-
     shared_high = sorted(
         ((dimension, (dims_a[dimension] + dims_b[dimension]) / 2) for dimension in FINGERPRINT_DIMENSIONS),
         key=lambda item: item[1],
