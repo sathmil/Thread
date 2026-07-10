@@ -1,69 +1,70 @@
-import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderWithQueryClient } from "@/test-utils";
 
-vi.mock("@/lib/api", () => ({
-  getStories: vi.fn(),
-  search: vi.fn(),
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
-import { getStories, search } from "@/lib/api";
+vi.mock("@/lib/api", () => ({
+  getProjection: vi.fn(),
+  getJourney: vi.fn(),
+}));
 
-import SearchPage from "./page";
+import { getProjection } from "@/lib/api";
 
-describe("SearchPage", () => {
-  it("shows the fallback story list when no query has been submitted", async () => {
-    vi.mocked(getStories).mockResolvedValue([
+import HomePage from "./page";
+
+describe("HomePage (explore map)", () => {
+  it("renders the heading, fetches projection data, and shows map controls", async () => {
+    vi.mocked(getProjection).mockResolvedValue([
       {
-        id: "11111111-1111-1111-1111-111111111111",
         external_id: "001",
-        title: "A story about belonging",
-        focus: "Belonging & Community",
-        word_count: 100,
+        story_uuid: "11111111-1111-1111-1111-111111111111",
+        title: "A story",
         preview: "Once upon a time...",
+        x: 0.1,
+        y: 0.2,
+        cluster_label: 0,
+        theme_name: "Voice",
       },
     ]);
 
-    renderWithQueryClient(<SearchPage />);
+    renderWithQueryClient(<HomePage />);
 
-    expect(await screen.findByText("Story 001")).toBeInTheDocument();
-    expect(screen.getByText("Belonging & Community")).toBeInTheDocument();
+    expect(await screen.findByText("Find yourself in someone else's experience")).toBeInTheDocument();
+    expect(getProjection).toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Zoom in" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reset view" })).toBeDisabled();
   });
 
-  it("renders search results after submitting a query", async () => {
-    vi.mocked(getStories).mockResolvedValue([]);
-    vi.mocked(search).mockResolvedValue({
-      query: "feeling invisible at school",
-      unit: "Passages",
-      results: [
-        {
-          story_id: "002",
-          story_uuid: "22222222-2222-2222-2222-222222222222",
-          unit_type: "passage",
-          unit_index: 2,
-          text_unit: "Then we get to school, and suddenly it's like we disappear.",
-          preview: "Then we get to school, and suddenly it's like we disappear.",
-          score: 0.56,
-          theme: "Read, Know, School, Doesn",
-        },
-      ],
-    });
+  it("shows an empty state when there are no stories to plot", async () => {
+    vi.mocked(getProjection).mockResolvedValue([]);
 
-    const user = userEvent.setup();
-    renderWithQueryClient(<SearchPage />);
+    renderWithQueryClient(<HomePage />);
+
+    expect(await screen.findByText("No stories to plot yet.")).toBeInTheDocument();
+  });
+
+  it("filters points via the search box without requiring a submit", async () => {
+    vi.mocked(getProjection).mockResolvedValue([
+      {
+        external_id: "001",
+        story_uuid: "11111111-1111-1111-1111-111111111111",
+        title: "A story about belonging",
+        preview: "Once upon a time...",
+        x: 0.1,
+        y: 0.2,
+        cluster_label: 0,
+        theme_name: "Voice",
+      },
+    ]);
+
+    renderWithQueryClient(<HomePage />);
+    await screen.findByRole("button", { name: "Zoom in" });
+
     const input = screen.getByPlaceholderText(/belonging, identity/i);
-
-    await user.type(input, "feeling invisible at school");
-    await user.click(screen.getByRole("button", { name: "Search" }));
-
-    await waitFor(() => expect(search).toHaveBeenCalledWith({
-      query: "feeling invisible at school",
-      unit: "Passages",
-      top_k: 5,
-    }));
-
-    expect(await screen.findByText(/0.56 similarity/)).toBeInTheDocument();
+    expect(input).toHaveValue("");
   });
 });

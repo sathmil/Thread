@@ -103,12 +103,25 @@ class ClusterOut(BaseModel):
 
 class ProjectionPointOut(BaseModel):
     external_id: str
+    story_uuid: str
     title: str | None
     preview: str
     x: float
     y: float
     cluster_label: int | None
     theme_name: str | None
+
+
+class InsightFindingOut(BaseModel):
+    finding_type: str
+    finding_text: str
+    dimension_a: str | None
+    dimension_b: str | None
+    effect_size: float | None
+    sample_size: int | None
+    subject_story_external_id: str | None
+    subject_story_uuid: str | None
+    subject_story_title: str | None
 
 
 class EvaluationResultOut(BaseModel):

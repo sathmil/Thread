@@ -7,10 +7,11 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { href: "/", label: "Search" },
+  { href: "/", label: "Explore" },
+  { href: "/search", label: "Search" },
   { href: "/clusters", label: "Themes" },
+  { href: "/insights", label: "Insights" },
   { href: "/evaluation", label: "Evaluation" },
-  { href: "/map", label: "Map" },
   { href: "/dataset", label: "Dataset" },
   { href: "/workspace", label: "Workspace" },
 ];

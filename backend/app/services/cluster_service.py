@@ -122,6 +122,7 @@ def get_clusters(
 @dataclass
 class ProjectionPoint:
     external_id: str
+    story_uuid: str
     title: str | None
     preview: str
     x: float
@@ -175,6 +176,7 @@ def get_projection(
         points.append(
             ProjectionPoint(
                 external_id=story.external_id,
+                story_uuid=str(story.id),
                 title=story.title,
                 preview=make_preview(story.story_text, limit=160),
                 x=float(x),

@@ -3,7 +3,7 @@ import time
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import clusters, datasets, evaluation, health, jobs, search, stories
+from app.routers import clusters, datasets, evaluation, health, insights, jobs, search, stories
 
 app = FastAPI(title="Narrative Clustering API")
 
@@ -21,6 +21,7 @@ app.include_router(clusters.router)
 app.include_router(evaluation.router)
 app.include_router(datasets.router)
 app.include_router(jobs.router)
+app.include_router(insights.router)
 
 
 @app.middleware("http")

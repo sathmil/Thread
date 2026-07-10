@@ -97,12 +97,25 @@ export type EvaluationRunOut = {
 
 export type ProjectionPointOut = {
   external_id: string;
+  story_uuid: string;
   title: string | null;
   preview: string;
   x: number;
   y: number;
   cluster_label: number | null;
   theme_name: string | null;
+};
+
+export type InsightFindingOut = {
+  finding_type: string;
+  finding_text: string;
+  dimension_a: string | null;
+  dimension_b: string | null;
+  effect_size: number | null;
+  sample_size: number | null;
+  subject_story_external_id: string | null;
+  subject_story_uuid: string | null;
+  subject_story_title: string | null;
 };
 
 export type DatasetOut = {
@@ -183,6 +196,10 @@ export function getEvaluationRun(params: { unit: SearchUnit; top_k: number }): P
 
 export function getProjection(): Promise<ProjectionPointOut[]> {
   return fetchJson<ProjectionPointOut[]>("/clusters/projection");
+}
+
+export function getInsights(datasetId: string, token?: string | null): Promise<InsightFindingOut[]> {
+  return fetchJson<InsightFindingOut[]>(`/datasets/${datasetId}/insights`, { token });
 }
 
 export function getDatasets(token?: string | null): Promise<DatasetOut[]> {

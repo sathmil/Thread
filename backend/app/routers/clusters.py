@@ -56,6 +56,7 @@ def get_projection(
     return [
         ProjectionPointOut(
             external_id=p.external_id,
+            story_uuid=p.story_uuid,
             title=p.title,
             preview=p.preview,
             x=p.x,

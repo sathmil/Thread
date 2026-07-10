@@ -275,3 +275,39 @@ class StoryFingerprint(Base):
     dimensions: Mapped[dict] = mapped_column(JSON, nullable=False)
     summary_source: Mapped[str] = mapped_column(String, nullable=False, server_default="rule_based")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class InsightFinding(Base):
+    """A single reproducible, statistically-computed finding about a dataset
+    (roadmap M8.5) — correlations across fingerprint dimensions, or a
+    per-story superlative (most representative/unique/complex, a
+    theme-bridging story, or a story that changed themes after a
+    re-index). Persisted rather than recomputed per page load; an LLM may
+    rephrase finding_text for readability but never asserts the statistic
+    itself — effect_size/sample_size are always the real computed values.
+    """
+
+    __tablename__ = "insight_findings"
+    __table_args__ = (
+        CheckConstraint(
+            "finding_type in "
+            "('correlation','most_representative','most_unique','most_complex','theme_bridge','theme_migration')",
+            name="ck_insight_findings_finding_type",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    dataset_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("datasets.id", ondelete="CASCADE"), nullable=False
+    )
+    finding_type: Mapped[str] = mapped_column(String, nullable=False)
+    subject_story_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("stories.id", ondelete="CASCADE")
+    )
+    dimension_a: Mapped[str | None] = mapped_column(String)
+    dimension_b: Mapped[str | None] = mapped_column(String)
+    finding_text: Mapped[str] = mapped_column(Text, nullable=False)
+    effect_size: Mapped[float | None] = mapped_column(Float)
+    sample_size: Mapped[int | None] = mapped_column(Integer)
+    embedding_model: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
