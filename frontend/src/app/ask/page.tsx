@@ -2,11 +2,13 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+import { MessageCircleIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { askQuestion } from "@/lib/api";
 
 const EXAMPLE_QUESTIONS = [
@@ -70,13 +72,25 @@ export default function AskPage() {
         <p className="text-sm text-destructive">Something went wrong asking that — try again.</p>
       )}
 
-      {askMutation.data && (
+      {askMutation.isPending && (
         <Card>
+          <CardContent className="space-y-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </CardContent>
+        </Card>
+      )}
+
+      {askMutation.data && (
+        <Card className="animate-in fade-in slide-in-from-bottom-2 duration-500">
           <CardContent className="space-y-3">
-            {!askMutation.data.available && (
-              <Badge variant="outline">Not configured</Badge>
-            )}
-            <p className="text-sm">{askMutation.data.answer}</p>
+            <div className="flex items-start gap-2">
+              <MessageCircleIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+              <div className="space-y-3">
+                {!askMutation.data.available && <Badge variant="outline">Not configured</Badge>}
+                <p className="text-sm">{askMutation.data.answer}</p>
+              </div>
+            </div>
             {askMutation.data.tool_calls.length > 0 && (
               <p className="text-xs text-muted-foreground">
                 Used: {askMutation.data.tool_calls.map((call) => call.tool).join(", ")}

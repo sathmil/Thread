@@ -7,6 +7,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { mirrorStory } from "@/lib/api";
 
@@ -53,15 +54,27 @@ export default function MirrorPage() {
         <p className="text-sm text-destructive">Something went wrong finding matches — try again.</p>
       )}
 
+      {mirrorMutation.isPending && (
+        <div className="space-y-3">
+          <Skeleton className="h-6 w-56" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      )}
+
       {result && (
         <div className="space-y-6">
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold">
+            <h2 className="animate-in fade-in duration-500 text-lg font-semibold">
               You&apos;re closest to {result.matches.length} {result.matches.length === 1 ? "story" : "stories"}
               {result.matches[0]?.theme ? ` about ${result.matches[0].theme}` : ""}
             </h2>
-            {result.matches.map((match) => (
-              <Card key={match.story_id}>
+            {result.matches.map((match, index) => (
+              <Card
+                key={match.story_id}
+                className="animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500"
+                style={{ animationDelay: `${index * 80}ms` }}
+              >
                 <CardHeader className="flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-base">{match.title ?? `Story ${match.story_id}`}</CardTitle>
                   <Badge>{match.score.toFixed(2)} similarity</Badge>

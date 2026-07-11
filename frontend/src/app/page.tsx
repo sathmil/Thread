@@ -14,6 +14,7 @@ import {
   type ScatterPointItem,
 } from "recharts";
 
+import { Onboarding } from "@/components/onboarding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -116,6 +117,7 @@ export default function HomePage() {
 
   return (
     <div className="space-y-6">
+      <Onboarding />
       <div>
         <h1 className="text-2xl font-semibold">Find yourself in someone else&apos;s experience</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -205,6 +207,7 @@ export default function HomePage() {
                       r={5}
                       fill={colorForCluster(label)}
                       opacity={opacityFor(shapeProps.payload as ProjectionPointOut)}
+                      className="transition-opacity duration-300 ease-out"
                     />
                   )}
                 />

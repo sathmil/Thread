@@ -32,8 +32,12 @@ export default function ClustersPage() {
         <p className="text-sm text-muted-foreground">No themes yet — index a dataset to generate clusters.</p>
       )}
 
-      {data?.map((cluster) => (
-        <Card key={cluster.cluster_label}>
+      {data?.map((cluster, index) => (
+        <Card
+          key={cluster.cluster_label}
+          className="animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500 transition-shadow hover:shadow-md"
+          style={{ animationDelay: `${index * 60}ms` }}
+        >
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <div>
               <CardTitle className="text-base">
@@ -50,7 +54,7 @@ export default function ClustersPage() {
             <div className="space-y-2">
               {cluster.stories.map((story) => (
                 <Link key={story.external_id} href={`/stories/${story.story_uuid}`} className="block">
-                  <div className="rounded-md border p-3 hover:bg-muted/50">
+                  <div className="rounded-md border p-3 transition-colors hover:bg-muted/50">
                     <p className="text-sm font-medium">Story {story.external_id}</p>
                     <p className="text-xs text-muted-foreground">
                       {story.title} &middot; {story.focus} &middot; {story.word_count} words

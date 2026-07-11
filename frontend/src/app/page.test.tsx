@@ -1,5 +1,5 @@
 import { screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderWithQueryClient } from "@/test-utils";
 
@@ -17,6 +17,13 @@ import { getProjection } from "@/lib/api";
 import HomePage from "./page";
 
 describe("HomePage (explore map)", () => {
+  // The map is tested here as a returning visitor — the first-visit
+  // onboarding modal's own open/dismiss behavior is covered in
+  // components/onboarding.test.tsx.
+  beforeEach(() => {
+    window.localStorage.setItem("thread_onboarding_seen", "1");
+  });
+
   it("renders the heading, fetches projection data, and shows map controls", async () => {
     vi.mocked(getProjection).mockResolvedValue([
       {

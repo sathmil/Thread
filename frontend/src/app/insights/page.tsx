@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { SparklesIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,17 +55,27 @@ export default function InsightsPage() {
       {error && <p className="text-sm text-destructive">Could not load insights.</p>}
 
       {findings && findings.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          Not enough data yet to surface reproducible findings — index a larger dataset first.
-        </p>
+        <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed py-10 text-center">
+          <SparklesIcon className="size-5 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            Not enough data yet to surface reproducible findings.
+          </p>
+          <Link href="/workspace" className="text-sm underline underline-offset-4">
+            Index a larger dataset to unlock this
+          </Link>
+        </div>
       )}
 
       {correlations.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Patterns across dimensions</h2>
           <div className="space-y-2">
-            {correlations.map((finding) => (
-              <Card key={`${finding.dimension_a}-${finding.dimension_b}`}>
+            {correlations.map((finding, index) => (
+              <Card
+                key={`${finding.dimension_a}-${finding.dimension_b}`}
+                className="animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500"
+                style={{ animationDelay: `${index * 60}ms` }}
+              >
                 <CardContent className="flex items-center justify-between gap-3">
                   <p className="text-sm">{finding.finding_text}</p>
                   {finding.effect_size !== null && (
@@ -82,7 +93,11 @@ export default function InsightsPage() {
           <h2 className="text-lg font-semibold">Notable stories</h2>
           <div className="space-y-2">
             {superlatives.map((finding, index) => (
-              <SuperlativeCard key={`${finding.finding_type}-${finding.subject_story_uuid}-${index}`} finding={finding} />
+              <SuperlativeCard
+                key={`${finding.finding_type}-${finding.subject_story_uuid}-${index}`}
+                finding={finding}
+                index={index}
+              />
             ))}
           </div>
         </section>
@@ -91,7 +106,7 @@ export default function InsightsPage() {
   );
 }
 
-function SuperlativeCard({ finding }: { finding: InsightFindingOut }) {
+function SuperlativeCard({ finding, index }: { finding: InsightFindingOut; index: number }) {
   const label = FINDING_TYPE_LABELS[finding.finding_type] ?? finding.finding_type;
 
   const body = (
@@ -101,13 +116,16 @@ function SuperlativeCard({ finding }: { finding: InsightFindingOut }) {
   );
 
   return (
-    <Card>
+    <Card
+      className="animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500"
+      style={{ animationDelay: `${index * 60}ms` }}
+    >
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base">{finding.subject_story_title ?? `Story ${finding.subject_story_external_id}`}</CardTitle>
         <Badge variant="secondary">{label}</Badge>
       </CardHeader>
       {finding.subject_story_uuid ? (
-        <Link href={`/stories/${finding.subject_story_uuid}`} className="block hover:bg-muted/50">
+        <Link href={`/stories/${finding.subject_story_uuid}`} className="block transition-colors hover:bg-muted/50">
           {body}
         </Link>
       ) : (

@@ -140,13 +140,21 @@ function SearchResults({
   }
 
   if (!data || data.results.length === 0) {
-    return <p className="text-sm text-muted-foreground">No matches found.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">
+        No matches found — try a different phrase, or widen the search unit to Stories.
+      </p>
+    );
   }
 
   return (
     <div className="space-y-3">
-      {data.results.map((result) => (
-        <Card key={`${result.story_id}-${result.unit_index}`}>
+      {data.results.map((result, index) => (
+        <Card
+          key={`${result.story_id}-${result.unit_index}`}
+          className="animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500"
+          style={{ animationDelay: `${index * 50}ms` }}
+        >
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base">
               <Link href={`/stories/${result.story_uuid}`} className="hover:underline">

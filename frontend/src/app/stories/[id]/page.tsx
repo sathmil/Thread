@@ -61,8 +61,17 @@ function StoryDetail({ id, getToken }: { id: string; getToken: () => Promise<str
   if (detailQuery.isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-64" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-8 w-2/3" />
+          <Skeleton className="h-4 w-40" />
+        </div>
         <Skeleton className="h-40 w-full" />
+        <div className="space-y-3">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
       </div>
     );
   }
@@ -74,9 +83,9 @@ function StoryDetail({ id, getToken }: { id: string; getToken: () => Promise<str
   const story = detailQuery.data;
 
   return (
-    <div className="space-y-6">
+    <div className="animate-in fade-in duration-500 space-y-6">
       <div>
-        <Link href="/dataset" className="text-sm text-muted-foreground hover:text-foreground">
+        <Link href="/dataset" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
           &larr; Back to dataset
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -126,12 +135,14 @@ function JourneySection({ query }: { query: UseQueryResult<JourneyOut, Error> })
       </div>
 
       {journey.nearest.length === 0 && (
-        <p className="text-sm text-muted-foreground">No other stories in this dataset yet.</p>
+        <p className="text-sm text-muted-foreground">
+          This story doesn&apos;t have any neighbors yet — it&apos;s the only one in its dataset so far.
+        </p>
       )}
 
       <div className="space-y-3">
-        {journey.nearest.map((entry) => (
-          <JourneyCard key={entry.story_id} entry={entry} />
+        {journey.nearest.map((entry, index) => (
+          <JourneyCard key={entry.story_id} entry={entry} index={index} />
         ))}
       </div>
 
@@ -160,9 +171,12 @@ function JourneySection({ query }: { query: UseQueryResult<JourneyOut, Error> })
   );
 }
 
-function JourneyCard({ entry }: { entry: JourneyEntryOut }) {
+function JourneyCard({ entry, index = 0 }: { entry: JourneyEntryOut; index?: number }) {
   return (
-    <Card>
+    <Card
+      className="animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500"
+      style={{ animationDelay: `${index * 60}ms` }}
+    >
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base">{entry.title ?? `Story ${entry.story_id}`}</CardTitle>
         <Badge variant={entry.same_theme ? "default" : "outline"}>
