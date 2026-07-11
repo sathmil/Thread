@@ -1,44 +1,33 @@
-# WHO WE ARE Story Explorer
+# Thread — Find yourself in someone else's experience
 
-This is a compact embedding-based prototype for structuring a small personal-story dataset. It uses a pretrained sentence-transformer model to embed the stories, then supports:
+An AI-powered interface for exploring human experience at scale: an explorable story map, semantic search, a
+conversational agent, "mirror my story" (paste your own narrative and see who else has felt the same way), theme
+summaries, and a statistical insight engine — all built on Next.js, FastAPI, Postgres/pgvector, Clerk, and Celery,
+with every OpenAI-backed feature degrading gracefully to deterministic logic when no API key is configured.
 
-- Semantic search over the WHO WE ARE stories
-- Sentence, passage, and full-story semantic search
-- Adjustable thematic clustering with KMeans
-- Automatic cluster labels and summaries
-- A 2D PCA map of story similarity
-- Retrieval evaluation queries
-- Enriched story metadata
-- Downloadable clustered output
-- Optional API-backed embeddings
-- CLI commands for search, clustering, and evaluation
-- Unit tests for the core retrieval pipeline
-
-The goal is deliberately narrower than training a custom narrative model from scratch: show that messy human data can be made searchable and interpretable quickly with reusable NLP building blocks.
+See `docs/architecture.md` for the full system design (including the Story/Theme/Journey/Insight product model this
+is organized around), `docs/api.md` for the route reference, `docs/database_schema.md` for the data model,
+`docs/scaling.md` and `docs/evaluation.md` for the retrieval/evaluation system in depth, `docs/security.md` for the
+auth/scoping model and known gaps, and `docs/demo_walkthrough.md` for a guided tour.
 
 ## Current Project State
 
-This project is mid-migration from a Streamlit prototype to a production stack (Next.js + FastAPI + Postgres/pgvector) — see the roadmap for the full plan. The Python retrieval/clustering/evaluation engine now lives under `backend/`:
+The production stack (Next.js + FastAPI + Postgres/pgvector + Clerk + Celery) below is the primary way to run this
+project; the original Streamlit prototype (`backend/streamlit_app.py`) still exists and still runs, kept as-is
+rather than deleted, but is no longer how this project is meant to be used or demoed. Its retrieval/clustering/
+evaluation logic (`backend/app/search.py`, `clustering.py`, `evaluation.py`, `text.py`, `data.py`) was carried forward
+into the production stack rather than rewritten — see `docs/architecture.md`'s "Reused from the original prototype"
+section.
 
-- `data/stories_metadata.csv`: 10 story records
-- `data/story_embeddings.npy`: cached sentence embeddings
-- `data/evaluation_gold.csv`: hand-labeled retrieval expectations
-- `data/clustered_stories.csv`: an earlier static clustering output
-- `backend/app/data.py`: load and enrich stories
-- `backend/app/text.py`: split stories into sentence, passage, and document units
-- `backend/app/embeddings.py`: local and optional API-backed embedding providers
-- `backend/app/search.py`: cosine-similarity ranking
-- `backend/app/clustering.py`: KMeans clustering, labels, summaries, and PCA projection
-- `backend/app/evaluation.py`: Recall@K and MRR evaluation
-- `backend/app/pipeline.py`: reusable index-building pipeline
-- `backend/app/cli.py`: command-line interface
-- `backend/streamlit_app.py`: interactive Streamlit explorer (prototype UI, being replaced)
-- `backend/tests/`: pytest coverage for text processing, data loading, search, clustering, and evaluation
-- `docs/architecture.md`: system design and scaling notes
-- `docs/demo_walkthrough.md`: demo flow and screenshot checklist
-- `docs/evaluation_queries.csv`: repeatable retrieval checks
-- `docs/portfolio_summary.md`: portfolio/interview framing
-- `docker-compose.yml`: local Postgres+pgvector service (backend API/frontend containers land in later milestones)
+- `data/`: the original 10-story seed dataset + hand-labeled evaluation queries, loaded by `backend/scripts/seed.py`.
+- `backend/app/`: FastAPI app — `routers/` (HTTP layer), `services/` (the actual logic), `models.py` (SQLAlchemy),
+  `tasks.py`/`celery_app.py` (background indexing).
+- `backend/alembic/`: schema migrations.
+- `backend/tests/` (pure retrieval/clustering/evaluation logic) and `backend/tests/api/` (FastAPI integration tests).
+- `frontend/`: Next.js app — see `docs/architecture.md` for the full page list.
+- `.github/workflows/ci.yml`: backend pytest against a real Postgres+pgvector service container, frontend lint/
+  typecheck/test/build.
+- `docker-compose.yml`: local Postgres+pgvector and Redis services.
 
 ## Running the Full Stack (Next.js + FastAPI + Postgres/pgvector + Celery)
 
@@ -76,7 +65,10 @@ Then open `http://localhost:3000`. To exercise the upload → index → search f
 account yet, see `backend/scripts/demo_large_upload.py` (drives the API directly via `TestClient`, bypassing auth
 with a dependency override — the same pattern the test suite uses).
 
-## Running the Streamlit Prototype
+## Running the Original Streamlit Prototype
+
+This is the pre-migration prototype — kept runnable for reference, not the primary way to use this project (see
+above). It's a single-dataset, no-auth, in-memory version of the same retrieval/clustering/evaluation logic.
 
 ```bash
 source myenv/bin/activate
@@ -130,33 +122,11 @@ This version avoids custom training. It uses:
 - PCA for a lightweight visual map
 - Recall@K and MRR for retrieval evaluation
 
-## How The App Works
+The prototype's sidebar/tabs (Search, Themes, Evaluation, Map, Dataset) map directly onto the production frontend's
+pages — see `docs/demo_walkthrough.md` for the current equivalents plus the features that only exist in the
+production stack (Ask, Mirror, Insights, per-story Journeys).
 
-The sidebar controls the analysis:
+## Portfolio / Interview Framing
 
-- `Theme clusters`: changes how many KMeans groups the story embeddings are divided into.
-- `Search results`: changes how many matches appear.
-- `Search unit`: switches between sentence-level, passage-level, and full-story search.
-- `Embedding backend`: switches between the local pretrained model and optional API-backed embeddings.
-- `Semantic search`: accepts natural language queries, embeds the query, and ranks the closest stories or passages with cosine similarity.
-
-The tabs separate the views:
-
-- `Search`: retrieves the most relevant stories or passages for a theme or phrase.
-- `Themes`: shows each cluster with generated keywords, a short summary, and story previews.
-- `Evaluation`: runs canned queries and shows the top match for each query.
-- `Map`: projects the story embeddings into two dimensions with PCA.
-- `Dataset`: shows the structured output and lets you download the clustered CSV.
-- `Demo`: gives a short walkthrough for presenting the project.
-
-That makes it faster, easier to explain, and more contained than a training-heavy approach while still reinforcing the research theme: turning unstructured human narratives into analyzable structure.
-
-## Resume Framing
-
-Strong SWE bullet:
-
-> Built a semantic retrieval system for unstructured narrative data using sentence embeddings, cosine similarity, KMeans clustering, TF-IDF labeling, and PCA visualization; added sentence-, passage-, and document-level retrieval with Recall@K/MRR evaluation and a reusable CLI.
-
-Shorter version:
-
-> Engineered an embedding-based search and clustering pipeline for qualitative story data, with modular indexing, semantic retrieval, evaluation metrics, and an interactive Streamlit UI.
+See `docs/portfolio_summary.md` for the current framing — it supersedes any resume bullet written for the original
+Streamlit-only version of this project.
