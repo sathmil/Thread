@@ -3,7 +3,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  ResponsiveContainer,
+  Scatter,
+  ScatterChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+  type ScatterPointItem,
+} from "recharts";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -185,9 +194,11 @@ export default function HomePage() {
                   data={clusterPoints}
                   fill={colorForCluster(label)}
                   cursor="pointer"
-                  onClick={(item: any) => handlePointClick(item.payload as ProjectionPointOut)}
-                  onDoubleClick={(item: any) => handlePointDoubleClick(item.payload as ProjectionPointOut)}
-                  shape={(shapeProps: any) => (
+                  onClick={(item: ScatterPointItem) => handlePointClick(item.payload as ProjectionPointOut)}
+                  onDoubleClick={(item: ScatterPointItem) =>
+                    handlePointDoubleClick(item.payload as ProjectionPointOut)
+                  }
+                  shape={(shapeProps: ScatterPointItem) => (
                     <circle
                       cx={shapeProps.cx}
                       cy={shapeProps.cy}
